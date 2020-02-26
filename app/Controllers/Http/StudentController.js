@@ -196,16 +196,29 @@ class StudentController {
       });
     }
     const { course_id } = request.all();
+
     const query = await Attendance.query()
       .where("course_id", course_id)
       .fetch();
+    let attendance = [];
+    let totalAttendance = 0;
+    query.toJSON().forEach(element => {
+      totalAttendance++;
+      attendance.push(JSON.parse(element.attendance));
+    });
+    let myAttendance = 0;
+    for (let index = 0; index < attendance.length; index++) {
+      const element = attendance[index];
 
-    
-    let my_attendance = 0;
-
-    const { attendance } = query;
-
-    return response.status(200).send({ payload: { data: { ...query } } });
+      element.forEach(index => {
+        if (loginId.id === index.student_id) {
+          myAttendance++;
+        }
+      });
+    }
+    return response.status(200).send({
+      payload: { data: attendance, totalCount: totalAttendance, myAttendance }
+    });
   }
 
   /**
