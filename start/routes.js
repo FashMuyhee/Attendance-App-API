@@ -35,10 +35,11 @@ Route.group(() => {
   Route.get("students/:id/get_courses", "StudentController.getCourses").as(
     "students.getCourses"
   );
-  Route.get("students/:id/get_attendance_by_courses", "StudentController.getAttendanceByCourses").as(
-    "students.getAttendanceByCourses"
-  );
- 
+  Route.get(
+    "students/:id/get_attendance_by_courses",
+    "StudentController.getAttendanceByCourses"
+  ).as("students.getAttendanceByCourses");
+
   // lecturer route
   Route.resource("lecturers", "LecturerController").apiOnly();
   Route.post("lecturers/:id/add_course", "LecturerController.addCourse").as(
@@ -47,9 +48,10 @@ Route.group(() => {
   Route.get("lecturers/:id/get_courses", "LecturerController.getCourses").as(
     "lecturers.getCourses"
   );
-  Route.get("lecturers/:id/get_attendances", "LecturerController.getAttendance").as(
-    "lecturers.getAttendance"
-  );
+  Route.get(
+    "lecturers/:id/get_attendances",
+    "LecturerController.getAttendance"
+  ).as("lecturers.getAttendance");
 
   // attendance route
   Route.post(
@@ -57,9 +59,16 @@ Route.group(() => {
     "AttendanceController.createAttendance"
   ).as("attendances.createAttendance");
   Route.put(
+    "attendances/create_signout/:code",
+    "AttendanceController.createSignout"
+  ).as("attendances.createSignout");
+  Route.put(
     "attendances/mark_attendance/:code",
     "AttendanceController.markAttendance"
   ).as("attendances.markAttendance");
+  Route.put("attendances/signout/:code", "AttendanceController.signout").as(
+    "attendances.signout"
+  );
 }).middleware(["auth"]);
 
 // course route
