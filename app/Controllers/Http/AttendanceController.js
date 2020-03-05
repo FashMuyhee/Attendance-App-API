@@ -158,7 +158,7 @@ class AttendanceController {
       if (!query.signout_code) {
         query.signout_code = signout_code;
         console.log("no code");
-        //await query.save();
+        await query.save();
         return response.status(200).send({
           payload: {
             type: "success",
@@ -166,6 +166,12 @@ class AttendanceController {
           }
         });
       }
+      return response.status(400).send({
+        payload: {
+          type: "error",
+          error: `you've created a signout code before`
+        }
+      });
       /*
     const validation = await validate(data, rules);
     if (validation.fails()) {
@@ -188,7 +194,7 @@ class AttendanceController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async signout({  request, response, auth }) {
+  async signout({ request, response, auth }) {
     try {
       await auth.check();
 
