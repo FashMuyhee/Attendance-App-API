@@ -66,7 +66,7 @@ Route.group(() => {
     "attendances/mark_attendance/:code",
     "AttendanceController.markAttendance"
   ).as("attendances.markAttendance");
-  Route.put("attendances/signout/:code", "AttendanceController.signout").as(
+  Route.put("attendances/signout", "AttendanceController.signout").as(
     "attendances.signout"
   );
 }).middleware(["auth"]);
