@@ -121,11 +121,11 @@ class AttendanceController {
         .send({ payload: { type: "error", error: validation.messages() } });
     }
  */
-      await query.save(query);
+      await query.save();
       return response.status(200).send({
         payload: {
           type: "success",
-          message: `attendance submitted`
+          message: `${student.fullname} your attendance has been submitted`
         }
       });
     } catch (error) {
@@ -155,7 +155,17 @@ class AttendanceController {
         capitalization: "uppercase"
       });
       const query = await Attendance.findBy("code", code);
-      query.signout_code = signout_code;
+      if (!query.signout_code) {
+        query.signout_code = signout_code;
+        console.log("no code");
+        //await query.save();
+        return response.status(200).send({
+          payload: {
+            type: "success",
+            message: `signout code created`
+          }
+        });
+      }
       /*
     const validation = await validate(data, rules);
     if (validation.fails()) {
@@ -164,14 +174,6 @@ class AttendanceController {
         .send({ payload: { type: "error", error: validation.messages() } });
     }
  */
-      await query.save(query);
-
-      return response.status(200).send({
-        payload: {
-          type: "success",
-          message: `signout code created`
-        }
-      });
     } catch (error) {
       return response
         .status(error.status)
@@ -186,25 +188,70 @@ class AttendanceController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async signout({ params: { code }, request, response, auth }) {
+  async signout({  request, response, auth }) {
     try {
       await auth.check();
 
       const user = await auth.getUser();
       const student = await user.student().fetch();
       const { signout_code } = request.all();
-      const query = await Attendance.query()
-        .where("code", code)
-        .andWhere("signout_code", signout_code)
-        .fetch();
-      query.forEach(element => {
-        console.log(element);
-      });
-      return response.status(200).send({
-        payload: {
-          type: "success",
-          message: "sign out"
+      let query = await Attendance.findBy("signout_code", signout_code);
+
+      const queryJson = query.toJSON();
+      let attendance = JSON.parse(queryJson.attendance);
+      let data;
+      let message;
+
+      for (let i = 0; i < attendance.length; i++) {
+        const index = attendance[i];
+
+        //check for marked attendance
+        if (
+          index.hasOwnProperty("student_id") &&
+          index.student_id === student.id &&
+          !index.signed_out
+        ) {
+          data = index;
+          // fix already signed out
+          const element = attendance.indexOf(data);
+          if (~element) {
+            data.signed_out = true;
+            attendance[element] = data;
+          }
+          query.attendance = JSON.stringify(attendance);
+
+          await query.save();
+          message = {
+            type: "sucess",
+            message: `${student.fullname} sign out sucessfull`
+          };
+          console.log(attendance);
         }
+        //if student has signed out before
+        else if (
+          index.hasOwnProperty("student_id") &&
+          index.student_id === student.id &&
+          index.signed_out
+        ) {
+          message = {
+            type: "error",
+            error: `${student.fullname} You've already signed out`
+          };
+        } else if (
+          index.hasOwnProperty("student_id") &&
+          index.student_id === student.id &&
+          !index.signed_out
+        ) {
+          message = {
+            type: "error",
+            error: `${student.fullname} You've need to mark attendance before you can sign out`
+          };
+        }
+      }
+
+      // response
+      return response.status(message.type === "error" ? 400 : 200).send({
+        payload: { ...message }
       });
     } catch (error) {
       return response
