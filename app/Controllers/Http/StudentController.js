@@ -14,15 +14,35 @@ const { validate } = use("Validator");
  * Resourceful controller for interacting with students
  */
 class StudentController {
-  // /**
-  //  * Show a list of all students.
-  //  * GET students
-  //  *
-  //  * @param {object} ctx
-  //  * @param {Request} ctx.request
-  //  * @param {Response} ctx.response
-  //  */
-  // async index({ request, response }) {}
+  /**
+   * student login.
+   * GET students
+   *
+   * @param {object} ctx
+   * @param {Request} ctx.request
+   * @param {Response} ctx.response
+   */
+  async login({ auth, request, response }) {
+    try {
+      const { matric_no } = request.all();
+      const student = await Student.findBy("matric_no", matric_no);
+      const studentAuth = auth.authenticator("student");
+      try {
+        const user = await studentAuth.generate(student);
+        return response
+          .status(200)
+          .send({ payload: { type: "success", user } });
+      } catch (error) {
+        return response
+          .status(error.status)
+          .send({ payload: { type: "error", error } });
+      }
+    } catch (error) {
+      return response
+        .status(error.status)
+        .send({ payload: { type: "error", error } });
+    }
+  }
 
   /**
    * Create/save a new student.
@@ -32,46 +52,37 @@ class StudentController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async store({ auth, request, response }) {
+  async store({ request, response }) {
     try {
-      try {
-        await auth.check();
+      const { fullname, matric_no, department, level, email } = request.all();
+      const data = {
+        fullname,
+        matric_no,
+        department,
+        level,
+        email
+      };
 
-        const user = await auth.getUser();
-        const { fullname, matric_no, department, level } = request.all();
-        const data = {
-          fullname,
-          matric_no,
-          department,
-          level,
-          email: user.email
-        };
+      const rules = {
+        matric_no: "required|unique:students,matric_no",
+        fullname: "required",
+        department: "required",
+        level: "required",
+        email: "required|unique:students,email"
+      };
 
-        const rules = {
-          matric_no: "required|unique:students,matric_no",
-          fullname: "required",
-          department: "required",
-          level: "required",
-          email: "required|unique:students,email"
-        };
-
-        const validation = await validate(data, rules);
-        if (validation.fails()) {
-          return response
-            .status(400)
-            .send({ payload: { type: "error", error: validation.messages() } });
-        }
-
-        const student = await user.student().create(data);
-
-        return response.status(200).send({
-          payload: { type: "success", message: "registration successful" }
-        });
-      } catch (error) {
-        return response.status(error.status).send({
-          payload: { type: "error", error: "something went wrong try again" }
-        });
+      const validation = await validate(data, rules);
+      if (validation.fails()) {
+        return response
+          .status(400)
+          .send({ payload: { type: "error", error: validation.messages() } });
       }
+
+      const student = await user.student().create(data);
+
+      return response.status(200).send({
+        payload: { type: "success", message: "registration successful" }
+      });
     } catch (error) {
       return response
         .status(error.status)
@@ -91,17 +102,7 @@ class StudentController {
   async addCourse({ auth, request, response, params: { id } }) {
     try {
       try {
-        const user = await auth.getUser();
-        const loginId = await user.student().fetch();
-        if (loginId.email != user.email) {
-          return response.status(400).send({
-            payload: {
-              type: "error",
-              error: `can't access this data`
-            }
-          });
-        }
-        const student = await Student.find(id);
+        const user = await auth.authenticator("student").getUser();
 
         const { course_id } = request.all();
 
@@ -117,7 +118,7 @@ class StudentController {
         }
 
         // await loginId.courses().attach(course_id);
-        await student.courses().attach(course_id);
+        await user.courses().attach(course_id);
 
         return response.status(200).send({
           payload: {
@@ -146,18 +147,8 @@ class StudentController {
    * @param {Response} ctx.response
    */
   async show({ auth, params: { id }, response }) {
-    const user = await auth.getUser();
-    const student = await user.student().fetch();
-    /* if (student.email != user.email) {
-      return response.status(400).send({
-        payload: {
-          type: "error",
-          error: `can't access this data`
-        }
-      });
-    } */
-
-    return response.status(200).send({ payload: { data: user, student } });
+    const user = await auth.authenticator("student").getUser();
+    return response.status(200).send({ payload: { data: user } });
   }
 
   /**
@@ -169,32 +160,14 @@ class StudentController {
    * @param {Response} ctx.response
    */
   async getCourses({ auth, params: { id }, response }) {
-    const user = await auth.getUser();
-    const loginId = await user.student().fetch();
-    if (loginId.email != user.email) {
-      return response.status(400).send({
-        payload: {
-          type: "error",
-          error: `can't access this data`
-        }
-      });
-    }
-    const student = await Student.find(id);
-    const courses = await student.courses().fetch();
+    const user = await auth.authenticator("student").getUser();
+    const courses = await user.courses().fetch();
     return response.status(200).send({ payload: { message: { courses } } });
   }
 
   async getAttendanceByCourses({ auth, params, request, response }) {
-    const user = await auth.getUser();
-    const loginId = await user.student().fetch();
-    if (loginId.email != user.email) {
-      return response.status(400).send({
-        payload: {
-          type: "error",
-          error: `can't access this data`
-        }
-      });
-    }
+    const user = await auth.authenticator("student").getUser();
+
     const { course_id } = request.all();
 
     const query = await Attendance.query()
@@ -211,13 +184,17 @@ class StudentController {
       const element = attendance[index];
 
       element.forEach(index => {
-        if (loginId.id === index.student_id) {
+        if (
+          user.id === index.student_id &&
+          index.signed_out &&
+          index.signed_in
+        ) {
           myAttendance++;
         }
       });
     }
     return response.status(200).send({
-      payload: { data: attendance, totalCount: totalAttendance, myAttendance }
+      payload: { data: attendance, totalAttendance, myAttendance }
     });
   }
 
@@ -229,8 +206,105 @@ class StudentController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async update({ params, request, response }) {}
+  async update({ params, request, auth, response }) {
+    try {
+      const user = await auth.authenticator("student").getUser();
 
+      const { fullname } = request.all();
+
+      const rules = {
+        fullname: "required"
+      };
+
+      const validation = await validate(request.all(), rules);
+      if (validation.fails()) {
+        return response
+          .status(400)
+          .send({ payload: { type: "error", error: validation.messages() } });
+      }
+
+      user.fullname = fullname;
+      try {
+        await user.save();
+        return response.status(400).send({
+          payload: {
+            type: "success",
+            success: `profile updated`
+          }
+        });
+      } catch (error) {
+        return response.status(400).send({
+          payload: {
+            type: "error",
+            error: `something went wrong try again`
+          }
+        });
+      }
+    } catch (error) {
+      return response.status(400).send({
+        payload: {
+          type: "error",
+          error: `You need to login`
+        }
+      });
+    }
+  }
+  /**
+   * Update student details.
+   * PUT or PATCH students/:id
+   *
+   * @param {object} ctx
+   * @param {Request} ctx.request
+   * @param {Response} ctx.response
+   */
+  async uploadDp({ params, request, auth, response }) {
+    try {
+      const user = await auth.getUser();
+      const student = await user.student().fetch();
+      if (student.email != user.email) {
+        return response.status(400).send({
+          payload: {
+            type: "error",
+            error: `can't access this data`
+          }
+        });
+      }
+      const { dp } = request.only(["dp"]);
+      const rules = {
+        dp: "required"
+      };
+
+      const validation = await validate(dp, rules);
+      if (validation.fails()) {
+        return response
+          .status(400)
+          .send({ payload: { type: "error", error: validation.messages() } });
+      }
+      try {
+        await student.save();
+        return response.status(400).send({
+          payload: {
+            type: "success",
+            success: `profile image uploaded `
+          }
+        });
+      } catch (error) {
+        return response.status(400).send({
+          payload: {
+            type: "error",
+            error: `something went wrong try again`
+          }
+        });
+      }
+    } catch (error) {
+      return response.status(400).send({
+        payload: {
+          type: "error",
+          error: `You need to login`
+        }
+      });
+    }
+  }
   /**
    * Delete a student with id.
    * DELETE students/:id
