@@ -24,8 +24,7 @@ class AttendanceController {
       try {
         await auth.check();
 
-        const user = await auth.getUser();
-        const lecturer = await user.lecturer().fetch();
+        const lecturer = await auth.authenticator("lecturer").getUser();
         const { course_id, location } = request.all();
         const code = randomstring.generate({
           length: 7,
@@ -82,8 +81,7 @@ class AttendanceController {
     try {
       await auth.check();
 
-      const user = await auth.getUser();
-      const student = await user.student().fetch();
+      const student = await auth.authenticator("student").getUser();
       const { gps } = request.only(["gps"]);
       const query = await Attendance.findBy("code", code);
       let data = new Array();
@@ -110,7 +108,9 @@ class AttendanceController {
         student_id: student.id,
         gps,
         signed_in: true,
-        signed_out: false
+        signed_in_time: new Date().toLocaleTimeString(),
+        signed_out: false,
+        signed_out_time: null
       });
       query.attendance = JSON.stringify(data);
       /* 
@@ -147,8 +147,7 @@ class AttendanceController {
     try {
       await auth.check();
 
-      const user = await auth.getUser();
-      const lecturer = await user.lecturer().fetch();
+      const lecturer = await auth.authenticator("lecturer").getUser();
       const signout_code = randomstring.generate({
         length: 7,
         charset: "hex",
@@ -198,8 +197,7 @@ class AttendanceController {
     try {
       await auth.check();
 
-      const user = await auth.getUser();
-      const student = await user.student().fetch();
+      const student = await auth.authenticator("student").getUser();
       const { signout_code } = request.all();
       let query = await Attendance.findBy("signout_code", signout_code);
 
@@ -222,6 +220,7 @@ class AttendanceController {
           const element = attendance.indexOf(data);
           if (~element) {
             data.signed_out = true;
+            data.signed_out_time = new Date().toLocaleTimeString();
             attendance[element] = data;
           }
           query.attendance = JSON.stringify(attendance);
