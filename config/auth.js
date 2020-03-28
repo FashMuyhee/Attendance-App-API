@@ -77,7 +77,7 @@ module.exports = {
   },
   lecturer: {
     serializer: "lucid",
-    model: "App/Models/Lecturer",
+    model: "App/Models/User",
     scheme: "jwt",
     uid: "email",
     password: "password",
