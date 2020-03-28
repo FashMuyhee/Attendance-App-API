@@ -3,6 +3,8 @@
 const Student = use("App/Models/Student");
 const Attendance = use("App/Models/Attendance");
 const Database = use("Database");
+const Helpers = use("Helpers");
+const arrow = require("../OtherFunctions/Custom");
 
 const { validate } = use("Validator");
 
@@ -29,6 +31,7 @@ class StudentController {
       const studentAuth = auth.authenticator("student");
       try {
         const user = await studentAuth.generate(student);
+        arrow(user);
         return response
           .status(200)
           .send({ payload: { type: "success", user } });
@@ -78,8 +81,8 @@ class StudentController {
           .send({ payload: { type: "error", error: validation.messages() } });
       }
 
-      const student = await user.student().create(data);
-
+      // const student = await user.student().create(data);
+      const student = await Student.create(data);
       return response.status(200).send({
         payload: { type: "success", message: "registration successful" }
       });
@@ -257,20 +260,18 @@ class StudentController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async uploadDp({ params, request, auth, response }) {
-    try {
-      const user = await auth.getUser();
-      const student = await user.student().fetch();
-      if (student.email != user.email) {
-        return response.status(400).send({
-          payload: {
-            type: "error",
-            error: `can't access this data`
-          }
-        });
-      }
-      const { dp } = request.only(["dp"]);
-      const rules = {
+  async uploadDp({ params: { id }, request, auth, response }) {
+    // try {
+    const student = await auth.authenticator("student").getUser();
+    console.log(student);
+
+    const dp = request.file("dp", {
+      types: ["image"],
+      size: "5mb"
+    });
+
+    // validations
+    /* const rules = {
         dp: "required"
       };
 
@@ -279,31 +280,40 @@ class StudentController {
         return response
           .status(400)
           .send({ payload: { type: "error", error: validation.messages() } });
-      }
-      try {
-        await student.save();
-        return response.status(400).send({
-          payload: {
-            type: "success",
-            success: `profile image uploaded `
-          }
-        });
-      } catch (error) {
-        return response.status(400).send({
-          payload: {
-            type: "error",
-            error: `something went wrong try again`
-          }
-        });
-      }
-    } catch (error) {
+      } */
+    const studentMatricNo = student.matric_no.split("/")[3].substr(4, 7);
+    const studentName = student.fullname.replace(" ", "_").toLowerCase();
+    const dpFile = `${studentName}_${studentMatricNo}.jpg`;
+    // move to upload folder
+    await dp.move(Helpers.tmpPath("uploads"), {
+      name: dpFile,
+      overwrite: true
+    });
+    if (!dp.moved()) {
       return response.status(400).send({
         payload: {
           type: "error",
-          error: `You need to login`
+          success: `something went wrong while uploading image`
         }
       });
     }
+    // update database
+    student.dp = dpFile;
+    await student.save();
+    return response.status(200).send({
+      payload: {
+        type: "success",
+        success: `profile image uploaded `
+      }
+    });
+    // } catch (error) {
+    //   return response.status(400).send({
+    //     payload: {
+    //       type: "error",
+    //       error: `You need to login`
+    //     }
+    //   });
+    // }
   }
   /**
    * Delete a student with id.
