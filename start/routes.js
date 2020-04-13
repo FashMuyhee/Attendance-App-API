@@ -59,6 +59,9 @@ Route.group(() => {
   Route.get("lecturers/:id/get_courses", "LecturerController.getCourses").as(
     "lecturers.getCourses"
   );
+  Route.put("lecturers/:id/uploadDp", "LecturerController.uploadDp").as(
+    "lecturers.uploadDp"
+  );
   Route.get(
     "lecturers/:id/get_attendances",
     "LecturerController.getAttendance"
