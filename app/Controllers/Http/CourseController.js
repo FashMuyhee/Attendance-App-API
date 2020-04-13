@@ -13,10 +13,10 @@ class CourseController {
    */
   async store({ auth, request, response }) {
     try {
-      try {
+      /* try {
         await auth.check();
 
-        const user = await auth.getUser();
+        const user = await auth.getUser(); */
         const data = request.only(["title", "code"]);
         const rules = {
           title: "required|unique:courses,title",
@@ -35,11 +35,11 @@ class CourseController {
         return response.status(200).send({
           payload: { type: "success", message: "course created" }
         });
-      } catch (error) {
+      /* } catch (error) {
         return response.status(error.status).send({
           payload: { type: "error", error: "something went wrong try again" }
         });
-      }
+      } */
     } catch (error) {
       return response
         .status(error.status)
