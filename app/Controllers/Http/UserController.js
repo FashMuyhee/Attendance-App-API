@@ -58,8 +58,9 @@ class UserController {
   async login({ auth, request, response }) {
     try {
       const { email, password } = request.all();
-      const user = await auth.attempt(email, password);
-      
+      const lecturerAuth = await auth.authenticator("lecturer");
+      const user = await lecturerAuth.attempt(email, password);
+
       return response.status(200).send({ payload: { type: "success", user } });
     } catch (error) {
       return response
