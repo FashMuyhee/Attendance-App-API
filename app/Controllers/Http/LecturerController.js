@@ -23,25 +23,20 @@ class LecturerController {
    * @param {View} ctx.view
    */
   async login({ auth, request, response }) {
+    const { email, password } = request.all();
+    const lecturerAuth = auth.authenticator("lecturer");
     try {
-      const { email } = request.all();
-      const lecturerAuth = auth.authenticator("lecturer");
-      const lecturer = await Lecturer.findBy("email", email);
-      try {
-        const user = await lecturerAuth.generate(lecturer);
-        console.log(user);
-        return response
-          .status(200)
-          .send({ payload: { type: "success", user } });
-      } catch (error) {
-        return response
-          .status(error.status)
-          .send({ payload: { type: "error", error } });
-      }
+      const user = await lecturerAuth.attempt(email, password);
+      return response.status(200).send({ payload: { type: "success", user } });
     } catch (error) {
-      return response
-        .status(error.status)
-        .send({ payload: { type: "error", error } });
+      /*  if (error.status === 401) 
+      return response.status(error.status).send({
+        payload: { type: "error", error: "Incorrect Password or Email" },
+      }); */
+      console.log(error);
+      return response.status(error.status).send({
+        payload: { type: "error", error },
+      });
     }
   }
 
@@ -55,23 +50,31 @@ class LecturerController {
    */
   async store({ auth, request, response }) {
     try {
-      const user = await auth.authenticator("lecturer").getUser();
-      const { fullname, staff_no, department, level, email } = request.all();
+      // const user = await auth.authenticator("lecturer").getUser();
+      const {
+        fullname,
+        staff_no,
+        department,
+        level,
+        password,
+        email,
+      } = request.all();
       const data = {
         fullname,
         staff_no,
         department,
         level,
-        email
+        email,
+        password,
       };
       const rules = {
         staff_no: "required|unique:lecturers,staff_no",
         fullname: "required",
         department: "required",
         level: "required",
-        email: "required|unique:lecturers,email"
+        password: "required",
+        email: "required|unique:lecturers,email",
       };
-
       const validation = await validate(data, rules);
       if (validation.fails()) {
         return response
@@ -80,13 +83,14 @@ class LecturerController {
       }
 
       try {
-        await user.lecturer().create(data);
+        // await user.lecturer().create(data);
+        await Lecturer.create(data);
       } catch (error) {
-        console.log(error);
+        return response.status(400).send({ payload: { type: "error", error } });
       }
 
       return response.status(200).send({
-        payload: { type: "success", message: "registration successful" }
+        payload: { type: "success", message: "registration successful" },
       });
     } catch (error) {
       return response
@@ -114,7 +118,7 @@ class LecturerController {
         const { course_id } = request.all();
 
         const rules = {
-          course_id: "required"
+          course_id: "required",
         };
 
         const validation = await validate(course_id, rules);
@@ -129,12 +133,12 @@ class LecturerController {
         return response.status(200).send({
           payload: {
             type: "success",
-            message: `course added`
-          }
+            message: `course added`,
+          },
         });
       } catch (error) {
         return response.status(error.status).send({
-          payload: { type: "error", error: "something went wrong try again" }
+          payload: { type: "error", error: "something went wrong try again" },
         });
       }
     } catch (error) {
@@ -157,11 +161,11 @@ class LecturerController {
     try {
       await auth.check();
       const user = await auth.authenticator("lecturer").getUser();
-      const lecturer = await user.lecturer().fetch();
-      return response.status(200).send({ data: { lecturer } });
+      // const lecturer = await user.lecturer().fetch();
+      return response.status(200).send({ data: { user } });
     } catch (error) {
       return response.status(error.status).send({
-        payload: { type: "error", error: "something went wrong try again" }
+        payload: { type: "error", error: "something went wrong try again" },
       });
     }
   }
@@ -175,22 +179,22 @@ class LecturerController {
    * @param {Response} ctx.response
    */
   async getCourses({ auth, params: { id }, response }) {
-    const user = await auth.authenticator("lecturer").getUser();
-    const lecturer = await user.lecturer().fetch();
+    const lecturer = await auth.authenticator("lecturer").getUser();
+    // const lecturer = await user.lecturer().fetch();
     const courses = await lecturer.courses().fetch();
     return response.status(200).send({ payload: { data: { courses } } });
   }
 
   async update({ params, auth, request, response }) {
     try {
-      const user = await auth.authenticator("lecturer").getUser();
-      const lecturer = await user.lecturer().fetch();
+      const lecturer = await auth.authenticator("lecturer").getUser();
+      // const lecturer = await user.lecturer().fetch();
       const { fullname } = request.all();
 
       const rules = {
-        fullname: "required"
+        fullname: "required",
       };
-      
+
       const validation = await validate(request.all(), rules);
       if (validation.fails()) {
         return response
@@ -204,35 +208,35 @@ class LecturerController {
         return response.status(400).send({
           payload: {
             type: "success",
-            success: `profile updated`
-          }
+            success: `profile updated`,
+          },
         });
       } catch (error) {
         return response.status(400).send({
           payload: {
             type: "error",
-            error: `something went wrong try again`
-          }
+            error: `something went wrong try again`,
+          },
         });
       }
     } catch (error) {
       return response.status(400).send({
         payload: {
           type: "error",
-          error: `You need to login`
-        }
+          error: `You need to login`,
+        },
       });
     }
   }
 
   async uploadDp({ params: { id }, request, auth, response }) {
     // try {
-    const user = await auth.authenticator("lecturer").getUser();
-    const lecturer = await user.lecturer().fetch();
+    const lecturer = await auth.authenticator("lecturer").getUser();
+    // const lecturer = await user.lecturer().fetch();
 
     const dp = request.file("dp", {
       types: ["image"],
-      size: "5mb"
+      size: "5mb",
     });
 
     // validations
@@ -248,18 +252,18 @@ class LecturerController {
       } */
     const lecturerStaffNo = lecturer.staff_no.split("/")[2];
     const lecturerName = lecturer.fullname.replace(" ", "_").toLowerCase();
-    const dpFile = `${lecturerName}_${lecturerStaffNo}.jpg`;
+    const dpFile = `${lecturerName}_${lecturerStaffNo}.${dp.extname}`;
     // move to upload folder
     await dp.move(Helpers.tmpPath("uploads"), {
       name: dpFile,
-      overwrite: true
+      overwrite: true,
     });
     if (!dp.moved()) {
       return response.status(400).send({
         payload: {
           type: "error",
-          success: `something went wrong while uploading image`
-        }
+          success: `something went wrong while uploading image`,
+        },
       });
     }
     // update database
@@ -268,8 +272,8 @@ class LecturerController {
     return response.status(200).send({
       payload: {
         type: "success",
-        success: `profile image uploaded `
-      }
+        success: `profile image uploaded `,
+      },
     });
     // } catch (error) {
     //   return response.status(400).send({
