@@ -29,14 +29,23 @@ class AttendanceController {
         const code = randomstring.generate({
           length: 7,
           charset: "hex",
-          capitalization: "uppercase"
+          capitalization: "uppercase",
         });
         const attendance = JSON.stringify(new Array());
+        let mycourse;
+        try {
+          mycourse = await lecturer
+            .courses()
+            .where("course_id", course_id)
+            .fetch();
+        } catch (error) {
+          return error;
+        }
         const data = {
           code: code,
           course_id,
           location,
-          attendance: attendance
+          attendance: attendance,
         };
         /*  const rules = {
           code:'required',
@@ -50,16 +59,22 @@ class AttendanceController {
             .status(400)
             .send({ payload: { type: "error", error: validation.messages() } });
         } */
-
-        await lecturer.myAttendances().create(data);
-
-        return response.status(200).send({
-          payload: { type: "success", message: "attendance created" }
-          // payload: { type: "success", message: data }
-        });
+        if (Array.isArray(mycourse.toJSON()) && mycourse.toJSON().length) {
+          await lecturer.myAttendances().create(data);
+          return response.status(200).send({
+            payload: { type: "success", message: "attendance created" },
+          });
+        } else {
+          return response.status(400).send({
+            payload: {
+              type: "error",
+              error: `you can't take attendance for course you are not assigned to`,
+            },
+          });
+        }
       } catch (error) {
         return response.status(error.status).send({
-          payload: { type: "error", error: "something went wrong try again" }
+          payload: { type: "error", error: "something went wrong try again" },
         });
       }
     } catch (error) {
@@ -84,9 +99,18 @@ class AttendanceController {
       const student = await auth.authenticator("student").getUser();
       const { gps } = request.only(["gps"]);
       const query = await Attendance.findBy("code", code);
+      // const checkQuery = JSON.parse(query);
+      if (!Array.isArray(JSON.parse(query))) {
+        return response.status(400).send({
+          payload: {
+            type: "error",
+            error: "this attendance code doesnt exist or it has expired",
+          },
+        });
+      }
       let data = new Array();
       data = JSON.parse(query.attendance);
-
+      console.log(Array.isArray(data));
       // check if the user has submitted attendance b4
       for (let index = 0; index < data.length; index++) {
         const element = data[index];
@@ -98,8 +122,8 @@ class AttendanceController {
           return response.status(200).send({
             payload: {
               type: "success",
-              message: `${student.fullname} you've submitted before`
-            }
+              message: `${student.fullname} you've submitted before`,
+            },
           });
         }
       }
@@ -110,7 +134,7 @@ class AttendanceController {
         signed_in: true,
         signed_in_time: new Date().toLocaleTimeString(),
         signed_out: false,
-        signed_out_time: null
+        signed_out_time: null,
       });
       query.attendance = JSON.stringify(data);
       /* 
@@ -125,8 +149,8 @@ class AttendanceController {
       return response.status(200).send({
         payload: {
           type: "success",
-          message: `${student.fullname} your attendance has been submitted`
-        }
+          message: `${student.fullname} your attendance has been submitted`,
+        },
       });
     } catch (error) {
       return response
@@ -151,25 +175,27 @@ class AttendanceController {
       const signout_code = randomstring.generate({
         length: 7,
         charset: "hex",
-        capitalization: "uppercase"
+        capitalization: "uppercase",
       });
       const query = await Attendance.findBy("code", code);
-      if (!query.signout_code) {
+      if (query.signout_code.length === "") {
         query.signout_code = signout_code;
-        console.log("no code");
         await query.save();
         return response.status(200).send({
           payload: {
             type: "success",
-            message: `signout code created`
-          }
+            message: { msg: `signout code created`, code: query.signout_code },
+          },
         });
       }
       return response.status(400).send({
         payload: {
           type: "error",
-          error: `you've created a signout code before`
-        }
+          error: {
+            msg: `you've created a signout code before`,
+            code: query.signout_code,
+          },
+        },
       });
       /*
     const validation = await validate(data, rules);
@@ -200,7 +226,7 @@ class AttendanceController {
       const student = await auth.authenticator("student").getUser();
       const { signout_code } = request.all();
       let query = await Attendance.findBy("signout_code", signout_code);
-
+      
       const queryJson = query.toJSON();
       let attendance = JSON.parse(queryJson.attendance);
       let data;
@@ -228,7 +254,7 @@ class AttendanceController {
           await query.save();
           message = {
             type: "sucess",
-            message: `${student.fullname} sign out sucessfull`
+            message: `${student.fullname} sign out sucessfull`,
           };
           console.log(attendance);
         }
@@ -240,7 +266,7 @@ class AttendanceController {
         ) {
           message = {
             type: "error",
-            error: `${student.fullname} You've already signed out`
+            error: `${student.fullname} You've already signed out`,
           };
         } else if (
           index.hasOwnProperty("student_id") &&
@@ -249,14 +275,14 @@ class AttendanceController {
         ) {
           message = {
             type: "error",
-            error: `${student.fullname} You've need to mark attendance before you can sign out`
+            error: `${student.fullname} You've need to mark attendance before you can sign out`,
           };
         }
       }
 
       // response
       return response.status(message.type === "error" ? 400 : 200).send({
-        payload: { ...message }
+        payload: { ...message },
       });
     } catch (error) {
       return response
