@@ -8,8 +8,8 @@ class AddPasswordSchema extends Schema {
     this.table("lecturers", table => {
       // alter table
       table
-        .string("password", 45)
-        .after("staff_no")
+        .string("password", 100)
+        .after("email")
         .defaultTo("password");
     });
   }
