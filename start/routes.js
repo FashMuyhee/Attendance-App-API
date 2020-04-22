@@ -26,7 +26,7 @@ Route.group(() => {
     "index",
     "create",
     "edit",
-    "store"
+    "store",
   ]);
   Route.post("students/:id/add_course", "StudentController.addCourse").as(
     "students.addCourse"
@@ -48,6 +48,10 @@ Route.group(() => {
   Route.put("attendances/signout", "AttendanceController.signout").as(
     "attendances.signout"
   );
+  Route.get(
+    "attendances/get_attendance_location/:code",
+    "AttendanceController.getAttendanceLocation"
+  ).as("attendances.getAttendanceLocation");
 }).middleware(["auth:student"]);
 
 // lecturer route
