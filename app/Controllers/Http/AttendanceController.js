@@ -4,6 +4,7 @@ const Student = use("App/Models/Student");
 const User = use("App/Models/User");
 const { validate } = use("Validator");
 const randomstring = require("randomstring");
+const objIsEmpty = require("../OtherFunctions/Custom");
 
 /** @typedef {import('@adonisjs/framework/src/Request')} Request */
 /** @typedef {import('@adonisjs/framework/src/Response')} Response */
@@ -98,60 +99,61 @@ class AttendanceController {
 
       const student = await auth.authenticator("student").getUser();
       const { gps } = request.only(["gps"]);
-      const query = await Attendance.findBy("code", code);
-      // const checkQuery = JSON.parse(query);
-      if (!Array.isArray(JSON.parse(query))) {
+
+      let query = await Attendance.findBy("code", code);
+
+      if (objIsEmpty(query)) {
         return response.status(400).send({
           payload: {
             type: "error",
-            error: "this attendance code doesnt exist or it has expired",
+            error: "this attendance code doesn't exist or it has expired",
+          },
+        });
+      } else if (!objIsEmpty(query)) {
+        let data = new Array();
+        data = JSON.parse(query.attendance);
+        // check if the user has submitted attendance b4
+        for (let index = 0; index < data.length; index++) {
+          const element = data[index];
+          if (
+            element.hasOwnProperty("student_id") &&
+            student.id === element.student_id &&
+            element.signed_in
+          ) {
+            return response.status(200).send({
+              payload: {
+                type: "success",
+                message: `${student.fullname} you've submitted before`,
+              },
+            });
+          }
+        }
+        // else add student to the attendance list
+        data.push({
+          student_id: student.id,
+          gps,
+          signed_in: true,
+          signed_in_time: new Date().toLocaleTimeString(),
+          signed_out: false,
+          signed_out_time: null,
+        });
+        query.attendance = JSON.stringify(data);
+        /*
+          const validation = await validate(data, rules);
+          if (validation.fails()) {
+            return response
+              .status(400)
+              .send({ payload: { type: "error", error: validation.messages() } });
+          }
+       */
+        await query.save();
+        return response.status(200).send({
+          payload: {
+            type: "success",
+            message: `${student.fullname} your attendance has been submitted`,
           },
         });
       }
-      let data = new Array();
-      data = JSON.parse(query.attendance);
-      console.log(Array.isArray(data));
-      // check if the user has submitted attendance b4
-      for (let index = 0; index < data.length; index++) {
-        const element = data[index];
-        if (
-          element.hasOwnProperty("student_id") &&
-          student.id === element.student_id &&
-          element.signed_in
-        ) {
-          return response.status(200).send({
-            payload: {
-              type: "success",
-              message: `${student.fullname} you've submitted before`,
-            },
-          });
-        }
-      }
-      // else add student to the attendance list
-      data.push({
-        student_id: student.id,
-        gps,
-        signed_in: true,
-        signed_in_time: new Date().toLocaleTimeString(),
-        signed_out: false,
-        signed_out_time: null,
-      });
-      query.attendance = JSON.stringify(data);
-      /* 
-    const validation = await validate(data, rules);
-    if (validation.fails()) {
-      return response
-        .status(400)
-        .send({ payload: { type: "error", error: validation.messages() } });
-    }
- */
-      await query.save();
-      return response.status(200).send({
-        payload: {
-          type: "success",
-          message: `${student.fullname} your attendance has been submitted`,
-        },
-      });
     } catch (error) {
       return response
         .status(error.status)
@@ -226,64 +228,103 @@ class AttendanceController {
       const student = await auth.authenticator("student").getUser();
       const { signout_code } = request.all();
       let query = await Attendance.findBy("signout_code", signout_code);
-      
-      const queryJson = query.toJSON();
-      let attendance = JSON.parse(queryJson.attendance);
-      let data;
-      let message;
 
-      for (let i = 0; i < attendance.length; i++) {
-        const index = attendance[i];
+      if (objIsEmpty(query)) {
+        return response.status(400).send({
+          payload: {
+            type: "error",
+            error: "this attendance code doesn't exist or it has expired",
+          },
+        });
+      } else {
+        const queryJson = query.toJSON();
+        let attendance = JSON.parse(queryJson.attendance);
+        let data;
+        let message;
 
-        //check for marked attendance
-        if (
-          index.hasOwnProperty("student_id") &&
-          index.student_id === student.id &&
-          !index.signed_out
-        ) {
-          data = index;
-          // fix already signed out
-          const element = attendance.indexOf(data);
-          if (~element) {
-            data.signed_out = true;
-            data.signed_out_time = new Date().toLocaleTimeString();
-            attendance[element] = data;
+        for (let i = 0; i < attendance.length; i++) {
+          const index = attendance[i];
+
+          //check for marked attendance
+          if (
+            index.hasOwnProperty("student_id") &&
+            index.student_id === student.id &&
+            !index.signed_out
+          ) {
+            data = index;
+            // fix already signed out
+            const element = attendance.indexOf(data);
+            if (~element) {
+              data.signed_out = true;
+              data.signed_out_time = new Date().toLocaleTimeString();
+              attendance[element] = data;
+            }
+            query.attendance = JSON.stringify(attendance);
+
+            await query.save();
+            message = {
+              type: "sucess",
+              message: `${student.fullname} sign out sucessfull`,
+            };
+            console.log(attendance);
           }
-          query.attendance = JSON.stringify(attendance);
+          //if student has signed out before
+          else if (
+            index.hasOwnProperty("student_id") &&
+            index.student_id === student.id &&
+            index.signed_out
+          ) {
+            message = {
+              type: "error",
+              error: `${student.fullname} You've already signed out`,
+            };
+          } else if (
+            index.hasOwnProperty("student_id") &&
+            index.student_id === student.id &&
+            !index.signed_out
+          ) {
+            message = {
+              type: "error",
+              error: `${student.fullname} You've need to mark attendance before you can sign out`,
+            };
+          }
+        }
 
-          await query.save();
-          message = {
-            type: "sucess",
-            message: `${student.fullname} sign out sucessfull`,
-          };
-          console.log(attendance);
-        }
-        //if student has signed out before
-        else if (
-          index.hasOwnProperty("student_id") &&
-          index.student_id === student.id &&
-          index.signed_out
-        ) {
-          message = {
-            type: "error",
-            error: `${student.fullname} You've already signed out`,
-          };
-        } else if (
-          index.hasOwnProperty("student_id") &&
-          index.student_id === student.id &&
-          !index.signed_out
-        ) {
-          message = {
-            type: "error",
-            error: `${student.fullname} You've need to mark attendance before you can sign out`,
-          };
-        }
+        // response
+        return response.status(message.type === "error" ? 400 : 200).send({
+          payload: { ...message },
+        });
       }
+    } catch (error) {
+      return response
+        .status(error.status)
+        .send({ payload: { type: "error", error } });
+    }
+  }
 
-      // response
-      return response.status(message.type === "error" ? 400 : 200).send({
-        payload: { ...message },
-      });
+  async getAttendanceLocation({ params: { code }, response, auth }) {
+    try {
+      await auth.check();
+
+      // const student = await auth.authenticator("student").getUser();
+      const query = await Attendance.findBy("code", code);
+      if (objIsEmpty(query)) {
+        return response.status(400).send({
+          payload: {
+            type: "error",
+            error: "this attendance code doesnt exist or it has expired",
+          },
+        });
+      } else {
+        const attLocation = query.location;
+
+        return response.status(200).send({
+          payload: {
+            type: "success",
+            message: attLocation,
+          },
+        });
+      }
     } catch (error) {
       return response
         .status(error.status)
