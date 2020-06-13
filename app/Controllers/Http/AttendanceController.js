@@ -4,7 +4,7 @@ const Student = use("App/Models/Student");
 const User = use("App/Models/User");
 const { validate } = use("Validator");
 const randomstring = require("randomstring");
-const objIsEmpty = require("../OtherFunctions/Custom");
+const { objIsEmpty, compareImageDp } = require("../OtherFunctions/Custom");
 
 /** @typedef {import('@adonisjs/framework/src/Request')} Request */
 /** @typedef {import('@adonisjs/framework/src/Response')} Response */
@@ -100,6 +100,12 @@ class AttendanceController {
       const student = await auth.authenticator("student").getUser();
       const { gps } = request.only(["gps"]);
 
+      const cameraDp = request.file("cameraDp", {
+        types: ["image"],
+        size: "5mb",
+      });
+      const saveDp = `tmp/uploads/${student.dp}`;
+
       let query = await Attendance.findBy("code", code);
 
       if (objIsEmpty(query)) {
@@ -129,30 +135,49 @@ class AttendanceController {
           }
         }
         // else add student to the attendance list
-        data.push({
-          student_id: student.id,
-          gps,
-          signed_in: true,
-          signed_in_time: new Date().toLocaleTimeString(),
-          signed_out: false,
-          signed_out_time: null,
-        });
-        query.attendance = JSON.stringify(data);
-        /*
-          const validation = await validate(data, rules);
-          if (validation.fails()) {
-            return response
-              .status(400)
-              .send({ payload: { type: "error", error: validation.messages() } });
-          }
-       */
-        await query.save();
-        return response.status(200).send({
-          payload: {
-            type: "success",
-            message: `${student.fullname} your attendance has been submitted`,
-          },
-        });
+
+        // check if user's  dp match image sent
+        const imgComp = await compareImageDp(cameraDp.tmpPath, saveDp);
+        if (imgComp < 20) {
+          data.push({
+            student_id: student.id,
+            gps: gps,
+            signed_in: true,
+            signed_in_time: new Date().toLocaleTimeString(),
+            signed_out: false,
+            signed_out_time: null,
+          });
+          query.attendance = JSON.stringify(data);
+
+          /*  const validation = await validate(data, rules);
+            if (validation.fails()) {
+              return response.status(400).send({
+                payload: { type: "error", error: validation.messages() },
+              });
+            } */
+
+          await query.save();
+          return response.status(200).send({
+            payload: {
+              type: "success",
+              message: `${student.fullname} your attendance has been submitted`,
+            },
+          });
+        } else if (imgComp === undefined) {
+          return response.status(200).send({
+            payload: {
+              type: "error",
+              error: `Something went wrong while matching your captured face with your profile picture please try again to continue`,
+            },
+          });
+        } else {
+          return response.status(200).send({
+            payload: {
+              type: "error",
+              error: `${student.fullname} ,Attendance not added,  you can't sign for someelse`,
+            },
+          });
+        }
       }
     } catch (error) {
       return response
@@ -227,6 +252,11 @@ class AttendanceController {
 
       const student = await auth.authenticator("student").getUser();
       const { signout_code } = request.all();
+      const cameraDp = request.file("cameraDp", {
+        types: ["image"],
+        size: "5mb",
+      });
+      const saveDp = `tmp/uploads/${student.dp}`;
       let query = await Attendance.findBy("signout_code", signout_code);
 
       if (objIsEmpty(query)) {
@@ -251,22 +281,38 @@ class AttendanceController {
             index.student_id === student.id &&
             !index.signed_out
           ) {
-            data = index;
-            // fix already signed out
-            const element = attendance.indexOf(data);
-            if (~element) {
-              data.signed_out = true;
-              data.signed_out_time = new Date().toLocaleTimeString();
-              attendance[element] = data;
-            }
-            query.attendance = JSON.stringify(attendance);
+            const imgComp = await compareImageDp(cameraDp.tmpPath, saveDp);
+            if (imgComp < 20) {
+              data = index;
+              // fix already signed out
+              const element = attendance.indexOf(data);
+              if (~element) {
+                data.signed_out = true;
+                data.signed_out_time = new Date().toLocaleTimeString();
+                attendance[element] = data;
+              }
+              query.attendance = JSON.stringify(attendance);
 
-            await query.save();
-            message = {
-              type: "sucess",
-              message: `${student.fullname} sign out sucessfull`,
-            };
-            console.log(attendance);
+              await query.save();
+              message = {
+                type: "sucess",
+                message: `${student.fullname} sign out sucessfull`,
+              };
+            } else if (imgComp === undefined) {
+              return response.status(200).send({
+                payload: {
+                  type: "error",
+                  error: `Something went wrong while matching your captured face with your profile picture please try again to continue`,
+                },
+              });
+            } else {
+              return response.status(200).send({
+                payload: {
+                  type: "error",
+                  error: `${student.fullname} , you can't signout for someelse`,
+                },
+              });
+            }
           }
           //if student has signed out before
           else if (
