@@ -4,7 +4,6 @@ const Student = use("App/Models/Student");
 const Attendance = use("App/Models/Attendance");
 const Database = use("Database");
 const Helpers = use("Helpers");
-const arrow = require("../OtherFunctions/Custom");
 
 const { validate } = use("Validator");
 
@@ -31,7 +30,6 @@ class StudentController {
       const studentAuth = auth.authenticator("student");
       try {
         const user = await studentAuth.generate(student);
-        arrow(user);
         return response
           .status(200)
           .send({ payload: { type: "success", user } });
@@ -63,7 +61,7 @@ class StudentController {
         matric_no,
         department,
         level,
-        email
+        email,
       };
 
       const rules = {
@@ -71,7 +69,7 @@ class StudentController {
         fullname: "required",
         department: "required",
         level: "required",
-        email: "required|unique:students,email"
+        email: "required|unique:students,email",
       };
 
       const validation = await validate(data, rules);
@@ -84,7 +82,7 @@ class StudentController {
       // const student = await user.student().create(data);
       const student = await Student.create(data);
       return response.status(200).send({
-        payload: { type: "success", message: "registration successful" }
+        payload: { type: "success", message: "registration successful" },
       });
     } catch (error) {
       return response
@@ -110,7 +108,7 @@ class StudentController {
         const { course_id } = request.all();
 
         const rules = {
-          course_id: "required"
+          course_id: "required",
         };
 
         const validation = await validate(course_id, rules);
@@ -126,12 +124,12 @@ class StudentController {
         return response.status(200).send({
           payload: {
             type: "success",
-            message: `course added`
-          }
+            message: `course added`,
+          },
         });
       } catch (error) {
         return response.status(error.status).send({
-          payload: { type: "error", error: "something went wrong try again" }
+          payload: { type: "error", error: "something went wrong try again" },
         });
       }
     } catch (error) {
@@ -178,7 +176,7 @@ class StudentController {
       .fetch();
     let attendance = [];
     let totalAttendance = 0;
-    query.toJSON().forEach(element => {
+    query.toJSON().forEach((element) => {
       totalAttendance++;
       attendance.push(JSON.parse(element.attendance));
     });
@@ -186,7 +184,7 @@ class StudentController {
     for (let index = 0; index < attendance.length; index++) {
       const element = attendance[index];
 
-      element.forEach(index => {
+      element.forEach((index) => {
         if (
           user.id === index.student_id &&
           index.signed_out &&
@@ -197,7 +195,7 @@ class StudentController {
       });
     }
     return response.status(200).send({
-      payload: { data: attendance, totalAttendance, myAttendance }
+      payload: { data: attendance, totalAttendance, myAttendance },
     });
   }
 
@@ -216,7 +214,7 @@ class StudentController {
       const { fullname } = request.all();
 
       const rules = {
-        fullname: "required"
+        fullname: "required",
       };
 
       const validation = await validate(request.all(), rules);
@@ -232,23 +230,23 @@ class StudentController {
         return response.status(400).send({
           payload: {
             type: "success",
-            success: `profile updated`
-          }
+            success: `profile updated`,
+          },
         });
       } catch (error) {
         return response.status(400).send({
           payload: {
             type: "error",
-            error: `something went wrong try again`
-          }
+            error: `something went wrong try again`,
+          },
         });
       }
     } catch (error) {
       return response.status(400).send({
         payload: {
           type: "error",
-          error: `You need to login`
-        }
+          error: `You need to login`,
+        },
       });
     }
   }
@@ -267,7 +265,7 @@ class StudentController {
 
     const dp = request.file("dp", {
       types: ["image"],
-      size: "5mb"
+      size: "5mb",
     });
 
     // validations
@@ -283,18 +281,18 @@ class StudentController {
       } */
     const studentMatricNo = student.matric_no.split("/")[3].substr(4, 7);
     const studentName = student.fullname.replace(" ", "_").toLowerCase();
-    const dpFile = `${studentName}_${studentMatricNo}.jpg`;
+    const dpFile = `${studentName}_${studentMatricNo}.${dp.extname}`;
     // move to upload folder
     await dp.move(Helpers.tmpPath("uploads"), {
       name: dpFile,
-      overwrite: true
+      overwrite: true,
     });
     if (!dp.moved()) {
       return response.status(400).send({
         payload: {
           type: "error",
-          success: `something went wrong while uploading image`
-        }
+          success: `something went wrong while uploading image`,
+        },
       });
     }
     // update database
@@ -303,8 +301,8 @@ class StudentController {
     return response.status(200).send({
       payload: {
         type: "success",
-        success: `profile image uploaded `
-      }
+        success: `profile image uploaded `,
+      },
     });
     // } catch (error) {
     //   return response.status(400).send({
