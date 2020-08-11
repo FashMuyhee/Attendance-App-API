@@ -8,7 +8,7 @@ class CreateSemestersSchema extends Schema {
         this.create("semesters", (table) => {
             // alter table
             table.increments();
-            table.string("semster", 10);
+            table.string("semester", 10);
             table.timestamps();
         });
     }
