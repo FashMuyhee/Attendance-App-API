@@ -6,7 +6,7 @@ const { validate } = use("Validator");
 const randomstring = require("randomstring");
 const HelperFunction = require("../OtherFunctions/HelperFunction");
 
-const myFunctions = new HelperFunction()
+const myFunctions = new HelperFunction();
 
 /** @typedef {import('@adonisjs/framework/src/Request')} Request */
 /** @typedef {import('@adonisjs/framework/src/Response')} Response */
@@ -36,6 +36,7 @@ class AttendanceController {
                 });
                 const attendance = JSON.stringify(new Array());
                 let mycourse;
+                // check if the lecturer his assigned to the take the course
                 try {
                     mycourse = await lecturer
                         .courses()
@@ -51,21 +52,26 @@ class AttendanceController {
                     attendance: attendance,
                 };
                 /*  const rules = {
-                  code:'required',
-                  lecturer_id: lecturer.id,
-                  course_id: "required"
-                };
+                          code:'required',
+                          lecturer_id: lecturer.id,
+                          course_id: "required"
+                        };
 
-                const validation = await validate(data, rules);
-                if (validation.fails()) {
-                  return response
-                    .status(400)
-                    .send({ payload: { type: "error", error: validation.messages() } });
-                } */
+                        const validation = await validate(data, rules);
+                        if (validation.fails()) {
+                          return response
+                            .status(400)
+                            .send({ payload: { type: "error", error: validation.messages() } });
+                        } */
+
+                // save created attendace
                 if (Array.isArray(mycourse.toJSON()) && mycourse.toJSON().length) {
                     await lecturer.myAttendances().create(data);
                     return response.status(200).send({
-                        payload: { type: "success", message: "attendance created" },
+                        payload: {
+                            type: "success",
+                            message: { msg: "attendance created", attendance_code: code },
+                        },
                     });
                 } else {
                     return response.status(400).send({
@@ -136,10 +142,12 @@ class AttendanceController {
                         });
                     }
                 }
-                // else add student to the attendance list
 
-                // check if user's  dp match image sent
-                const imgComp = await myFunctions.compareImageDp(cameraDp.tmpPath, saveDp);
+                // check if user's  dp match image sent and  add student to the attendance list
+                const imgComp = await myFunctions.compareImageDp(
+                    cameraDp.tmpPath,
+                    saveDp
+                );
                 if (imgComp < 20) {
                     data.push({
                         student_id: student.id,
@@ -152,11 +160,11 @@ class AttendanceController {
                     query.attendance = JSON.stringify(data);
 
                     /*  const validation = await validate(data, rules);
-                      if (validation.fails()) {
-                        return response.status(400).send({
-                          payload: { type: "error", error: validation.messages() },
-                        });
-                      } */
+                                if (validation.fails()) {
+                                  return response.status(400).send({
+                                    payload: { type: "error", error: validation.messages() },
+                                  });
+                                } */
 
                     await query.save();
                     return response.status(200).send({
@@ -165,7 +173,7 @@ class AttendanceController {
                             message: `${student.fullname} your attendance has been submitted`,
                         },
                     });
-                } else if (imgComp === undefined) {
+                } else if (imgComp === undefined) { // if facial recoginiton returned undefined
                     return response.status(200).send({
                         payload: {
                             type: "error",
@@ -173,7 +181,7 @@ class AttendanceController {
                         },
                     });
                 } else {
-                    return response.status(200).send({
+                    return response.status(200).send({ // if facial recognition retuned false
                         payload: {
                             type: "error",
                             error: `${student.fullname} ,Attendance not added,  you can't sign for someelse`,
@@ -206,6 +214,7 @@ class AttendanceController {
                     charset: "hex",
                     capitalization: "uppercase",
                 });
+                // find the created attendace code column then update the signout_code ifempty
                 const query = await Attendance.findBy("code", code);
                 if (query.signout_code.length === "") {
                     query.signout_code = signout_code;
@@ -261,6 +270,7 @@ class AttendanceController {
             const saveDp = `tmp/uploads/${student.dp}`;
             let query = await Attendance.findBy("signout_code", signout_code);
 
+            // check if attendance code exist i.e returned empty object
             if (myFunctions.objIsEmpty(query)) {
                 return response.status(400).send({
                     payload: {
@@ -271,22 +281,25 @@ class AttendanceController {
             } else {
                 const queryJson = query.toJSON();
                 let attendance = JSON.parse(queryJson.attendance);
-                let data;
-                let message;
+                let data, message;
 
                 for (let i = 0; i < attendance.length; i++) {
                     const index = attendance[i];
 
-                    //check for marked attendance
+                    //check if student has signed-out before 
                     if (
                         index.hasOwnProperty("student_id") &&
                         index.student_id === student.id &&
                         !index.signed_out
                     ) {
-                        const imgComp = await myFunctions.compareImageDp(cameraDp.tmpPath, saveDp);
+                        // facial recognition/compare 
+                        const imgComp = await myFunctions.compareImageDp(
+                            cameraDp.tmpPath,
+                            saveDp
+                        );
                         if (imgComp < 20) {
                             data = index;
-                            // fix already signed out
+                            // check if student data is in attendace array
                             const element = attendance.indexOf(data);
                             if (~element) {
                                 data.signed_out = true;
@@ -300,14 +313,14 @@ class AttendanceController {
                                 type: "sucess",
                                 message: `${student.fullname} sign out sucessfull`,
                             };
-                        } else if (imgComp === undefined) {
+                        } else if (imgComp === undefined) { // if facial recognition returned undefined
                             return response.status(200).send({
                                 payload: {
                                     type: "error",
                                     error: `Something went wrong while matching your captured face with your profile picture please try again to continue`,
                                 },
                             });
-                        } else {
+                        } else { // if facial recogintion returned false for similarities
                             return response.status(200).send({
                                 payload: {
                                     type: "error",
@@ -329,7 +342,7 @@ class AttendanceController {
                     } else if (
                         index.hasOwnProperty("student_id") &&
                         index.student_id === student.id &&
-                        !index.signed_out
+                        !index.signed_in
                     ) {
                         message = {
                             type: "error",
@@ -338,7 +351,7 @@ class AttendanceController {
                     }
                 }
 
-                // response
+                // main response
                 return response.status(message.type === "error" ? 400 : 200).send({
                     payload: {...message },
                 });
