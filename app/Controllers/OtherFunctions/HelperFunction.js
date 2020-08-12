@@ -1,7 +1,7 @@
 const deepai = require("deepai");
 deepai.setApiKey("9d0faa99-bb3f-4209-bc28-5855b6951d3d"); // get your free API key at https://deepai.org
 const fs = require("fs");
-
+//,
 class HelperFunction {
     /**
      * A Function to check if an
