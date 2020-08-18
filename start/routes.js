@@ -75,6 +75,10 @@ Route.group(() => {
         "lecturers/:id/get_attendances",
         "LecturerController.getAttendance"
     ).as("lecturers.getAttendance");
+    Route.get(
+        "lecturers/:id/attendance_by_course",
+        "LecturerController.getAttendanceByCourse"
+    ).as("lecturers.getAttendanceByCourse");
     Route.post(
         "attendances/create_attendance",
         "AttendanceController.createAttendance"
