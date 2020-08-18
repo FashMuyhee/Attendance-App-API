@@ -1,18 +1,16 @@
-"use strict";
+'use strict'
 const Attendance = use("App/Models/Attendance");
 const Student = use("App/Models/Student");
 const User = use("App/Models/User");
 const { validate } = use("Validator");
 const randomstring = require("randomstring");
-const HelperFunction = require("../OtherFunctions/HelperFunction");
+const { objIsEmpty, compareImageDp } = require("../OtherFunctions/HelperFunction");
 
-const myFunctions = new HelperFunction();
 
 /** @typedef {import('@adonisjs/framework/src/Request')} Request */
 /** @typedef {import('@adonisjs/framework/src/Response')} Response */
 /** @typedef {import('@adonisjs/framework/src/View')} View */
-
-class AttendanceController {
+class AttendaceController {
     /**
      * Create/save a new attendance.
      * POST lecturers
@@ -29,7 +27,7 @@ class AttendanceController {
 
                 const lecturer = await auth.authenticator("lecturer").getUser();
                 const { course_id, location } = request.all();
-                const code = randomstring.generate({
+                const attd_code = randomstring.generate({
                     length: 7,
                     charset: "hex",
                     capitalization: "uppercase",
@@ -45,12 +43,8 @@ class AttendanceController {
                 } catch (error) {
                     return error;
                 }
-                const data = {
-                    code: code,
-                    course_id,
-                    location,
-                    attendance: attendance,
-                };
+
+
                 /*  const rules = {
                           code:'required',
                           lecturer_id: lecturer.id,
@@ -66,18 +60,27 @@ class AttendanceController {
 
                 // save created attendace
                 if (Array.isArray(mycourse.toJSON()) && mycourse.toJSON().length) {
+                    // const attd_code = `${mycourse.toJSON()[0].code}_${code}`
+                    const data = {
+                        code: attd_code,
+                        course_id,
+                        location,
+                        attendance: attendance,
+                    };
+
                     await lecturer.myAttendances().create(data);
                     return response.status(200).send({
                         payload: {
                             type: "success",
-                            message: { msg: "attendance created", attendance_code: code },
+                            message: { msg: "attendance created", attendance_code: attd_code },
                         },
                     });
                 } else {
                     return response.status(400).send({
                         payload: {
                             type: "error",
-                            error: `you can't take attendance for course you are not assigned to`,
+                            error: `
+                        you can 't take attendance for course you are not assigned to`,
                         },
                     });
                 }
@@ -116,14 +119,14 @@ class AttendanceController {
 
             let query = await Attendance.findBy("code", code);
 
-            if (myFunctions.objIsEmpty(query)) {
+            if (objIsEmpty(query)) {
                 return response.status(400).send({
                     payload: {
                         type: "error",
                         error: "this attendance code doesn't exist or it has expired",
                     },
                 });
-            } else if (!myFunctions.objIsEmpty(query)) {
+            } else if (!objIsEmpty(query)) {
                 let data = new Array();
                 data = JSON.parse(query.attendance);
                 // check if the user has submitted attendance b4
@@ -142,49 +145,58 @@ class AttendanceController {
                         });
                     }
                 }
+                // check if student has uploaded dp already
+                if (student.dp != null) {
+                    // check if user's  dp match image sent and  add student to the attendance list
+                    const imgComp = await compareImageDp(
+                        cameraDp.tmpPath,
+                        saveDp
+                    );
+                    if (imgComp < 20) {
+                        data.push({
+                            student_id: student.id,
+                            gps: gps,
+                            signed_in: true,
+                            signed_in_time: new Date().toLocaleTimeString(),
+                            signed_out: false,
+                            signed_out_time: null,
+                        });
+                        query.attendance = JSON.stringify(data);
 
-                // check if user's  dp match image sent and  add student to the attendance list
-                const imgComp = await myFunctions.compareImageDp(
-                    cameraDp.tmpPath,
-                    saveDp
-                );
-                if (imgComp < 20) {
-                    data.push({
-                        student_id: student.id,
-                        gps: gps,
-                        signed_in: true,
-                        signed_in_time: new Date().toLocaleTimeString(),
-                        signed_out: false,
-                        signed_out_time: null,
-                    });
-                    query.attendance = JSON.stringify(data);
+                        /*  const validation = await validate(data, rules);
+                                    if (validation.fails()) {
+                                      return response.status(400).send({
+                                        payload: { type: "error", error: validation.messages() },
+                                      });
+                                    } */
 
-                    /*  const validation = await validate(data, rules);
-                                if (validation.fails()) {
-                                  return response.status(400).send({
-                                    payload: { type: "error", error: validation.messages() },
-                                  });
-                                } */
-
-                    await query.save();
-                    return response.status(200).send({
-                        payload: {
-                            type: "success",
-                            message: `${student.fullname} your attendance has been submitted`,
-                        },
-                    });
-                } else if (imgComp === undefined) { // if facial recoginiton returned undefined
-                    return response.status(200).send({
+                        await query.save();
+                        return response.status(200).send({
+                            payload: {
+                                type: "success",
+                                message: `${student.fullname} your attendance has been submitted`,
+                            },
+                        });
+                    } else if (imgComp === undefined) { // if facial recoginiton returned undefined
+                        return response.status(400).send({
+                            payload: {
+                                type: "error",
+                                error: `Something went wrong while matching your captured face with your profile picture please try again to continue`,
+                            },
+                        });
+                    } else {
+                        return response.status(400).send({ // if facial recognition retuned false
+                            payload: {
+                                type: "error",
+                                error: `${student.fullname} ,Attendance not added,  you can't sign for someelse`,
+                            },
+                        });
+                    }
+                } else { // not uploded dp
+                    return response.status(400).send({
                         payload: {
                             type: "error",
-                            error: `Something went wrong while matching your captured face with your profile picture please try again to continue`,
-                        },
-                    });
-                } else {
-                    return response.status(200).send({ // if facial recognition retuned false
-                        payload: {
-                            type: "error",
-                            error: `${student.fullname} ,Attendance not added,  you can't sign for someelse`,
+                            error: `${student.fullname} ,You need to upload a profile picture before marking attendance`,
                         },
                     });
                 }
@@ -208,15 +220,24 @@ class AttendanceController {
             try {
                 await auth.check();
 
-                const lecturer = await auth.authenticator("lecturer").getUser();
+                // const lecturer = await auth.authenticator("lecturer").getUser();
                 const signout_code = randomstring.generate({
                     length: 7,
                     charset: "hex",
                     capitalization: "uppercase",
                 });
                 // find the created attendace code column then update the signout_code ifempty
+                // validate signout_code b4 saving to database
+                /*
+                const validation = await validate(data, rules);
+                if (validation.fails()) {
+                  return response
+                    .status(400)
+                    .send({ payload: { type: "error", error: validation.messages() } });
+                }
+                */
                 const query = await Attendance.findBy("code", code);
-                if (query.signout_code.length === "") {
+                if (query.signout_code === null) {
                     query.signout_code = signout_code;
                     await query.save();
                     return response.status(200).send({
@@ -235,14 +256,7 @@ class AttendanceController {
                         },
                     },
                 });
-                /*
-    const validation = await validate(data, rules);
-    if (validation.fails()) {
-      return response
-        .status(400)
-        .send({ payload: { type: "error", error: validation.messages() } });
-    }
- */
+
             } catch (error) {
                 return response
                     .status(error.status)
@@ -271,7 +285,7 @@ class AttendanceController {
             let query = await Attendance.findBy("signout_code", signout_code);
 
             // check if attendance code exist i.e returned empty object
-            if (myFunctions.objIsEmpty(query)) {
+            if (objIsEmpty(query)) {
                 return response.status(400).send({
                     payload: {
                         type: "error",
@@ -293,7 +307,7 @@ class AttendanceController {
                         !index.signed_out
                     ) {
                         // facial recognition/compare 
-                        const imgComp = await myFunctions.compareImageDp(
+                        const imgComp = await compareImageDp(
                             cameraDp.tmpPath,
                             saveDp
                         );
@@ -369,7 +383,7 @@ class AttendanceController {
 
             // const student = await auth.authenticator("student").getUser();
             const query = await Attendance.findBy("code", code);
-            if (myFunctions.objIsEmpty(query)) {
+            if (objIsEmpty(query)) {
                 return response.status(400).send({
                     payload: {
                         type: "error",
@@ -382,7 +396,7 @@ class AttendanceController {
                 return response.status(200).send({
                     payload: {
                         type: "success",
-                        message: attLocation,
+                        message: { location: attLocation },
                     },
                 });
             }
@@ -394,4 +408,4 @@ class AttendanceController {
     }
 }
 
-module.exports = AttendanceController;
+module.exports = AttendaceController
