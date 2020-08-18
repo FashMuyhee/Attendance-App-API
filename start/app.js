@@ -11,13 +11,13 @@
 |
 */
 const providers = [
-  '@adonisjs/framework/providers/AppProvider',
-  '@adonisjs/auth/providers/AuthProvider',
-  '@adonisjs/bodyparser/providers/BodyParserProvider',
-  '@adonisjs/cors/providers/CorsProvider',
-  '@adonisjs/lucid/providers/LucidProvider',
-  '@adonisjs/validator/providers/ValidatorProvider',
-  '@adonisjs/auth/providers/AuthProvider'
+    '@adonisjs/framework/providers/AppProvider',
+    '@adonisjs/auth/providers/AuthProvider',
+    '@adonisjs/bodyparser/providers/BodyParserProvider',
+    '@adonisjs/cors/providers/CorsProvider',
+    '@adonisjs/lucid/providers/LucidProvider',
+    '@adonisjs/validator/providers/ValidatorProvider',
+    '@adonisjs/auth/providers/AuthProvider'
 ]
 
 /*
@@ -30,7 +30,7 @@ const providers = [
 |
 */
 const aceProviders = [
-  '@adonisjs/lucid/providers/MigrationsProvider'
+    '@adonisjs/lucid/providers/MigrationsProvider'
 ]
 
 /*
@@ -57,4 +57,10 @@ const aliases = {}
 */
 const commands = []
 
+console.log = function(msg, ...options) {
+    const ignore = ".returning() is not supported by mysql and will not have any effect."
+    if (msg.indexOf(ignore) === -1) {
+        console.info(msg, ...options)
+    }
+}
 module.exports = { providers, aceProviders, aliases, commands }
