@@ -1,9 +1,10 @@
 const deepai = require("deepai");
-deepai.setApiKey("9d0faa99-bb3f-4209-bc28-5855b6951d3d"); // get your free API key at https://deepai.org
+deepai.setApiKey("quickstart-QUdJIGlzIGNvbWluZy4uLi4K"); // get your free API key at https://deepai.org
+// deepai.setApiKey("128c961a-e1c6-4a30-b69b-3614ad7c0037"); // get your free API key at https://deepai.org
 const fs = require("fs");
 
 /**
- * A Function to check if an
+ * A Function to check if an 
  * object is empty by returning
  * either false or true
  * @param {} obj
