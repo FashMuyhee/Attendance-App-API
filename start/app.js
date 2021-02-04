@@ -57,10 +57,10 @@ const aliases = {}
 */
 const commands = []
 
-console.log = function(msg, ...options) {
+/* console.log = function(msg, ...options) {
     const ignore = ".returning() is not supported by mysql and will not have any effect."
     if (msg.indexOf(ignore) === -1) {
         console.info(msg, ...options)
     }
-}
+} */
 module.exports = { providers, aceProviders, aliases, commands }

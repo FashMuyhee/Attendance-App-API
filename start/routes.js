@@ -52,6 +52,10 @@ Route.group(() => {
         "attendances/get_attendance_location/:code",
         "AttendanceController.getAttendanceLocation"
     ).as("attendances.getAttendanceLocation");
+    Route.get(
+        "students/:id/get_attendance",
+        "StudentController.getAttendance"
+    ).as("students.getAttendance");
 }).middleware(["auth:student"]);
 
 // lecturer route
