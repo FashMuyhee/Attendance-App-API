@@ -29,7 +29,7 @@
     "deepai": "^1.0.15",
     "mysql": "^2.18.1",
     "randomstring": "^1.1.5",
-    "url-parser": "0.0.1"
+    "url-parse": "^1.4.7"
   },
   "devDependencies": {},
   "autoload": {
@@ -37,5 +37,5 @@
   },
   "engines": {
     "node": "8.5.0"
-}
+  }
 }
