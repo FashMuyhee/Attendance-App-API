@@ -28,10 +28,14 @@
     "@adonisjs/validator": "^5.0.6",
     "deepai": "^1.0.15",
     "mysql": "^2.18.1",
-    "randomstring": "^1.1.5"
+    "randomstring": "^1.1.5",
+    "url-parser": "0.0.1"
   },
   "devDependencies": {},
   "autoload": {
     "App": "./app"
-  }
+  },
+  "engines": {
+    "node": "8.5.0"
+}
 }
