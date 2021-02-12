@@ -6,7 +6,7 @@ const Env = use("Env");
 /** @type {import('@adonisjs/ignitor/src/Helpers')} */
 const Helpers = use("Helpers");
 const Url = require("url-parse");
-const DB_CONFIG = new Url(Env.get("CLEARDB_DATABASE_URL"));
+const DB_CONFIG = new Url(Env.get("JAWSDB_URL"));
 
 module.exports = {
   /*
