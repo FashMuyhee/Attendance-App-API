@@ -6,7 +6,7 @@ const Env = use("Env");
 /** @type {import('@adonisjs/ignitor/src/Helpers')} */
 const Helpers = use("Helpers");
 const Url = require("url-parse");
-const DB_CONFIG = new Url(Env.get("JAWSDB_URL"));
+const DB_CONFIG = new Url(Env.get("CLEARDB_DATABASE_URL"));
 
 module.exports = {
   /*
@@ -56,16 +56,16 @@ module.exports = {
   mysql: {
     client: "mysql",
     connection: {
+      host: Env.get("DB_HOST", DB_CONFIG.host),
+      port: Env.get("DB_PORT", ""),
+      user: Env.get("DB_USER", DB_CONFIG.username),
+      password: Env.get("DB_PASSWORD", DB_CONFIG.password),
+      database: Env.get("DB_DATABASE", DB_CONFIG.pathname.substr(1)),
       // host: Env.get("DB_HOST"),
-      // port: Env.get("DB_PORT", DB_CONFIG.port),
-      // user: Env.get("DB_USER", DB_CONFIG.username),
-      // password: Env.get("DB_PASSWORD", DB_CONFIG.password),
-      // database: Env.get("DB_DATABASE", DB_CONFIG.pathname.substr(1)),
-      host: Env.get("DB_HOST"),
-      port: Env.get("DB_PORT",'3306'),
-      user: Env.get("DB_USER"),
-      password: Env.get("DB_PASSWORD"),
-      database: Env.get("DB_DATABASE"),
+      // port: Env.get("DB_PORT",'3306'),
+      // user: Env.get("DB_USER"),
+      // password: Env.get("DB_PASSWORD"),
+      // database: Env.get("DB_DATABASE"),
     },
     debug: Env.get("DB_DEBUG", false),
   },
