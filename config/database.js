@@ -62,7 +62,7 @@ module.exports = {
       // password: Env.get("DB_PASSWORD", DB_CONFIG.password),
       // database: Env.get("DB_DATABASE", DB_CONFIG.pathname.substr(1)),
       host: Env.get("DB_HOST"),
-      port: Env.get("DB_PORT"),
+      port: Env.get("DB_PORT",'3306'),
       user: Env.get("DB_USER"),
       password: Env.get("DB_PASSWORD"),
       database: Env.get("DB_DATABASE"),
