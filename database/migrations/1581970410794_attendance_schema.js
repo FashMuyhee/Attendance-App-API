@@ -15,7 +15,7 @@ class AttendanceSchema extends Schema {
         .integer("lecturer_id")
         .unsigned()
         .notNullable();
-      table.integer("course_id").notNullable();
+      table.integer("course_id").notNullable().unsigned();
       table.string("location", 60).notNullable();
       table.json("attendance");
 
