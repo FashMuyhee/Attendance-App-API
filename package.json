@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node server.js",
     "test": "node ace test",
-    "dev": "adonis serve --dev"
+    "dev": "adonis serve --dev",
+    "migrate": "ENV_SILENT=true node ace migration:run --force",
+    "seed": "ENV_SILENT=true node ace seed --force"
   },
   "keywords": [
     "adonisjs",
