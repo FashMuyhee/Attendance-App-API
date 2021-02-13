@@ -89,7 +89,13 @@ class StudentController {
       }
 
       // const student = await user.student().create(data);
-      await Student.create(data);
+      try {
+        // await user.lecturer().create(data);
+        await Student.create(data);
+      } catch (error) {
+        return response.status(400).send({ payload: { type: "error", error } });
+      }
+
       return response.status(200).send({
         payload: { type: "success", message: "registration successful" },
       });
