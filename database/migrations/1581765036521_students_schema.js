@@ -8,10 +8,6 @@ class StudentsSchema extends Schema {
     this.create("students", table => {
       table.increments();
       table
-        .integer("user_id")
-        .unsigned()
-        .notNullable();
-      table
         .string("email", 100)
         .unique()
         .notNullable();
@@ -22,14 +18,7 @@ class StudentsSchema extends Schema {
         .unique();
       table.string("department", 20).notNullable();
       table.string("level", 15).notNullable();
-      table.string("dp", 100);
-
-      table
-        .foreign("user_id")
-        .references("id")
-        .inTable("users");
-      
-
+      table.string("dp", 100);    
       table.timestamps();
     });
   }
