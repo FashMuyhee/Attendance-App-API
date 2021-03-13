@@ -1,42 +1,52 @@
-const deepai = require("deepai");
-// deepai.setApiKey("quickstart-QUdJIGlzIGNvbWluZy4uLi4K"); // get your free API key at https://deepai.org
-deepai.setApiKey("9d0faa99-bb3f-4209-bc28-5855b6951d3d"); // get your free API key at https://deepai.org
 const fs = require("fs");
+const FormData = require("form-data");
+const form = new FormData();
+
+const axios = require("axios");
 /**
- * A Function to check if an 
+ * A Function to check if an
  * object is empty by returning
  * either false or true
  * @param {} obj
  */
 const objIsEmpty = (obj) => {
-    for (var key in obj) {
-        if (obj.hasOwnProperty(key)) return false;
-    }
-    return true;
+  for (var key in obj) {
+    if (obj.hasOwnProperty(key)) return false;
+  }
+  return true;
 };
 
 /**
  * A Function to compare similarities
  * between two images
- * the lower their differences the similar the images
+ * the higher their differences the similar the images
  * @param {imageOne} cameraDp
  * @param {imageTwo} saveDp
  */
-const compareImageDp = async(cameraDp, saveDp) => {
-    try {
-        const resp = await deepai.callStandardApi("image-similarity", {
-            image1: fs.createReadStream(cameraDp),
-            image2: fs.createReadStream(saveDp),
-        });
-        const {
-            output: { distance },
-        } = resp;
-        console.log(distance);
-        return distance;
-    } catch (error) {
-        console.log(error.response);
-        return error.response;
-    }
+const compareImageDp = async (cameraDp, saveDp) => {
+  form.append("img_1", fs.createReadStream(cameraDp));
+  form.append("img_2", fs.createReadStream(saveDp));
+
+  try {
+    let res = await axios({
+      method: "POST",
+      url: `http://facexapi.com/compare_faces`,
+      data: form,
+      headers: {
+        user_id: `604b4bdebeb79d20279c232a`,
+        // contentType: "image/jpeg",
+        ...form.getHeaders(),
+      },
+    });
+
+    const { data } = await res;
+    console.log("good");
+
+    console.log(data.data);
+    return data.data.confidence;
+  } catch (error) {
+    console.log("er", error);
+  }
 };
 
 module.exports = { compareImageDp, objIsEmpty };

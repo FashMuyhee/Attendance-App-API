@@ -153,7 +153,7 @@ class AttendaceController {
           // check if user's  dp match image sent and  add student to the attendance list
           const imgComp = await compareImageDp(cameraDp.tmpPath, saveDp);
           console.log(imgComp);
-          if (imgComp < 20) {
+          if (imgComp > 0.6) {
             data.push({
               student_id: student.id,
               gps: gps,
@@ -311,7 +311,7 @@ class AttendaceController {
           ) {
             // facial recognition/compare
             const imgComp = await compareImageDp(cameraDp.tmpPath, saveDp);
-            if (imgComp < 20) {
+            if (imgComp > 0.6) {
               data = index;
               // check if student data is in attendace array
               const element = attendance.indexOf(data);
