@@ -17,89 +17,91 @@
 const Route = use("Route");
 
 Route.get("/", () => {
-    return { greeting: "Welcome to Mobile Attendance" };
+  return { greeting: "Welcome to Mobile Attendance" };
 });
 
 // student route
 Route.group(() => {
-    Route.resource("students", "StudentController").except([
-        "index",
-        "create",
-        "edit",
-        "store",
-    ]);
-    Route.post("students/:id/add_course", "StudentController.addCourse").as(
-        "students.addCourse"
-    );
-    Route.get("students/:id/get_courses", "StudentController.getCourses").as(
-        "students.getCourses"
-    );
-    Route.get(
-        "students/:id/get_attendance_by_courses",
-        "StudentController.getAttendanceByCourses"
-    ).as("students.getAttendanceByCourses");
-    Route.put("students/:id/uploadDp", "StudentController.uploadDp").as(
-        "students.uploadDp"
-    );
-    Route.put(
-        "attendances/mark_attendance/:code",
-        "AttendanceController.markAttendance"
-    ).as("attendances.markAttendance");
-    Route.put("attendances/signout", "AttendanceController.signout").as(
-        "attendances.signout"
-    );
-    Route.get(
-        "attendances/get_attendance_location/:code",
-        "AttendanceController.getAttendanceLocation"
-    ).as("attendances.getAttendanceLocation");
-    Route.get(
-        "students/:id/get_attendance",
-        "StudentController.getAttendance"
-    ).as("students.getAttendance");
+  Route.resource("students", "StudentController").except([
+    "index",
+    "create",
+    "edit",
+    "store",
+  ]);
+  Route.post("students/:id/add_course", "StudentController.addCourse").as(
+    "students.addCourse"
+  );
+  Route.get("students/:id/get_courses", "StudentController.getCourses").as(
+    "students.getCourses"
+  );
+  Route.get(
+    "students/:id/get_attendance_by_courses",
+    "StudentController.getAttendanceByCourses"
+  ).as("students.getAttendanceByCourses");
+  Route.put("students/:id/uploadDp", "StudentController.uploadDp").as(
+    "students.uploadDp"
+  );
+  Route.put(
+    "attendances/mark_attendance/:code",
+    "AttendanceController.markAttendance"
+  ).as("attendances.markAttendance");
+  Route.put("attendances/signout", "AttendanceController.signout").as(
+    "attendances.signout"
+  );
+  Route.get(
+    "attendances/get_attendance_location/:code",
+    "AttendanceController.getAttendanceLocation"
+  ).as("attendances.getAttendanceLocation");
+  Route.get(
+    "students/:id/get_attendance",
+    "StudentController.getAttendance"
+  ).as("students.getAttendance");
 }).middleware(["auth:student"]);
 
 // lecturer route
 Route.group(() => {
-    Route.resource("lecturers", "LecturerController").except([
-        "index",
-        "create",
-        "edit",
-        "store",
-    ]);
-    Route.post("lecturers/:id/add_course", "LecturerController.addCourse").as(
-        "lecturers.addCourse"
-    );
-    Route.get("lecturers/:id/get_courses", "LecturerController.getCourses").as(
-        "lecturers.getCourses"
-    );
-    Route.put("lecturers/:id/uploadDp", "LecturerController.uploadDp").as(
-        "lecturers.uploadDp"
-    );
-    Route.get(
-        "lecturers/:id/get_attendances",
-        "LecturerController.getAttendance"
-    ).as("lecturers.getAttendance");
-    Route.get(
-        "lecturers/:id/attendance_by_course",
-        "LecturerController.getAttendanceByCourse"
-    ).as("lecturers.getAttendanceByCourse");
-    Route.post(
-        "attendances/create_attendance",
-        "AttendanceController.createAttendance"
-    ).as("attendances.createAttendance");
-    Route.put(
-        "attendances/create_signout/:code",
-        "AttendanceController.createSignout"
-    ).as("attendances.createSignout");
+  Route.resource("lecturers", "LecturerController").except([
+    "index",
+    "create",
+    "edit",
+    "store",
+  ]);
+  Route.post("lecturers/:id/add_course", "LecturerController.addCourse").as(
+    "lecturers.addCourse"
+  );
+  Route.get("lecturers/:id/get_courses", "LecturerController.getCourses").as(
+    "lecturers.getCourses"
+  );
+  Route.put("lecturers/:id/uploadDp", "LecturerController.uploadDp").as(
+    "lecturers.uploadDp"
+  );
+  Route.get(
+    "lecturers/:id/get_attendances",
+    "LecturerController.getAttendance"
+  ).as("lecturers.getAttendance");
+  Route.get(
+    "lecturers/:id/attendance_by_course",
+    "LecturerController.getAttendanceByCourse"
+  ).as("lecturers.getAttendanceByCourse");
+  Route.post(
+    "attendances/create_attendance",
+    "AttendanceController.createAttendance"
+  ).as("attendances.createAttendance");
+  Route.put(
+    "attendances/create_signout/:code",
+    "AttendanceController.createSignout"
+  ).as("attendances.createSignout");
+
 }).middleware(["auth:lecturer"]);
 
 // course route
-Route.resource("courses", "CourseController").apiOnly();
+Route.resource("courses", "CourseController").only(["index", "store"]);
+Route.get("courses/fetch_by_level/:level", "CourseController.fetchByLevel");
 
 Route.group(() => {
-    Route.post("register", "UserController.store").as("users.register");
-    Route.post("login", "UserController.login").as("auth.login");
-    // Route.post("logout", "UserController.logout").as("auth.logout").middleware(['auth']);
+  Route.post("register", "UserController.store").as("users.register");
+  Route.post("login", "UserController.login").as("auth.login");
+  // Route.post("logout", "UserController.logout").as("auth.logout").middleware(['auth']);
 }).prefix("auth");
 
 // authentication
