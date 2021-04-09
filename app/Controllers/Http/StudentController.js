@@ -342,6 +342,16 @@ class StudentController {
     const studentMatricNo = student.matric_no.split("/")[3].substr(4, 7);
     const studentName = student.fullname.replace(" ", "_").toLowerCase();
     const dpFile = `${studentName}_${studentMatricNo}.${dp.extname}`;
+    
+    // check if dp field isn't null
+    if (typeof student.dp != "object") {
+      return response.status(400).send({
+        payload: {
+          type: "error",
+          success: "You can only Upload Image Once",
+        },
+      });
+    }
     // move to upload folder
     await dp.move(Helpers.tmpPath("uploads"), {
       name: dpFile,
@@ -356,15 +366,6 @@ class StudentController {
       });
     }
 
-    // check if dp field isn't null
-    if (typeof student.dp != "object") {
-      return response.status(400).send({
-        payload: {
-          type: "error",
-          success: "You can only Upload Image Once",
-        },
-      });
-    }
     // update database
     student.dp = dpFile;
     await student.save();
