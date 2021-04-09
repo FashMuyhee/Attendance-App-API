@@ -348,7 +348,7 @@ class StudentController {
       overwrite: true,
     });
     if (!dp.moved()) {
-      return response.status(400).send({
+      return response.status(200).send({
         payload: {
           type: "error",
           success: `something went wrong while uploading image`,
