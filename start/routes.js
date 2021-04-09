@@ -56,6 +56,7 @@ Route.group(() => {
     "students/:id/get_attendance",
     "StudentController.getAttendance"
   ).as("students.getAttendance");
+  Route.get("students/:id/get_image", "StudentController.getImage");
 }).middleware(["auth:student"]);
 
 // lecturer route
@@ -91,7 +92,6 @@ Route.group(() => {
     "attendances/create_signout/:code",
     "AttendanceController.createSignout"
   ).as("attendances.createSignout");
-
 }).middleware(["auth:lecturer"]);
 
 // course route

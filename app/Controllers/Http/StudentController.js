@@ -4,6 +4,7 @@ const Student = use("App/Models/Student");
 const Attendance = use("App/Models/Attendance");
 const Database = use("Database");
 const Helpers = use("Helpers");
+const Storage = use("Drive");
 
 const { validate } = use("Validator");
 
@@ -385,6 +386,22 @@ class StudentController {
    * @param {Response} ctx.response
    */
   async destroy({ params, request, response }) {}
+
+  async getImage({ auth, response }) {
+    const student = await auth.authenticator("student").getUser();
+
+    const exist = await Storage.get(
+      `${Helpers.tmpPath("uploads")}/${student.dp}`
+    );
+    if (exist) {
+      return response.status(200).send({
+        payload: {
+          type: "success",
+          message: `${Helpers.tmpPath("uploads")}/${student.dp}`,
+        },
+      });
+    }
+  }
 }
 
 module.exports = StudentController;
