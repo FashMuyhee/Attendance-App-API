@@ -348,7 +348,7 @@ class StudentController {
       return response.status(200).send({
         payload: {
           type: "error",
-          success: "You can only Upload Image Once",
+          message: "You can only Upload Image Once",
         },
       });
     }
@@ -361,7 +361,7 @@ class StudentController {
       return response.status(200).send({
         payload: {
           type: "error",
-          success: `something went wrong while uploading image`,
+          message: `something went wrong while uploading image`,
         },
       });
     }
@@ -372,7 +372,7 @@ class StudentController {
     return response.status(200).send({
       payload: {
         type: "success",
-        success: `profile image uploaded `,
+        message: `profile image uploaded `,
       },
     });
   }
