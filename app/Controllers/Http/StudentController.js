@@ -178,7 +178,7 @@ class StudentController {
   async getCourses({ auth, params: { id }, response }) {
     const user = await auth.authenticator("student").getUser();
     const courses = await user.courses().fetch();
-    return response.status(200).send({ payload: { message: { courses } } });
+    return response.status(200).send({ payload: { courses } });
   }
 
   /**
@@ -334,24 +334,11 @@ class StudentController {
   async uploadDp({ params: { id }, request, auth, response }) {
     // try {
     const student = await auth.authenticator("student").getUser();
-    console.log(student);
-
     const dp = request.file("dp", {
       types: ["image"],
       size: "5mb",
     });
 
-    // validations
-    /* const rules = {
-                dp: "required"
-              };
-
-              const validation = await validate(dp, rules);
-              if (validation.fails()) {
-                return response
-                  .status(400)
-                  .send({ payload: { type: "error", error: validation.messages() } });
-              } */
     const studentMatricNo = student.matric_no.split("/")[3].substr(4, 7);
     const studentName = student.fullname.replace(" ", "_").toLowerCase();
     const dpFile = `${studentName}_${studentMatricNo}.${dp.extname}`;
@@ -368,6 +355,16 @@ class StudentController {
         },
       });
     }
+
+    // check if dp field isn't null
+    if (typeof student.dp != "object") {
+      return response.status(400).send({
+        payload: {
+          type: "error",
+          success: "You can only Upload Image Once",
+        },
+      });
+    }
     // update database
     student.dp = dpFile;
     await student.save();
@@ -377,14 +374,6 @@ class StudentController {
         success: `profile image uploaded `,
       },
     });
-    // } catch (error) {
-    //   return response.status(400).send({
-    //     payload: {
-    //       type: "error",
-    //       error: `You need to login`
-    //     }
-    //   });
-    // }
   }
   /**
    * Delete a student with id.
