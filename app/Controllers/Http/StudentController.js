@@ -2,10 +2,7 @@
 
 const Student = use("App/Models/Student");
 const Attendance = use("App/Models/Attendance");
-const Database = use("Database");
-const Helpers = use("Helpers");
-const Storage = use("Drive");
-
+const Cloudinary = use("App/Services/Cloudinary");
 const { validate } = use("Validator");
 
 /** @typedef {import('@adonisjs/framework/src/Request')} Request */
@@ -27,7 +24,6 @@ class StudentController {
   async login({ auth, request, response }) {
     try {
       const { matric_no, password } = request.all();
-      // const student = await Student.findBy("matric_no", matric_no);
       const studentAuth = auth.authenticator("student");
       try {
         const user = await studentAuth.attempt(matric_no, password);
@@ -340,10 +336,6 @@ class StudentController {
       size: "5mb",
     });
 
-    const studentMatricNo = student.matric_no.split("/")[3].substr(4, 7);
-    const studentName = student.fullname.replace(" ", "_").toLowerCase();
-    const dpFile = `${studentName}_${studentMatricNo}.${dp.extname}`;
-
     // check if dp field isn't null
     if (typeof student.dp != "object") {
       return response.status(200).send({
@@ -353,27 +345,25 @@ class StudentController {
         },
       });
     }
-    // move to upload folder
-    await dp.move(Helpers.tmpPath("uploads"), {
-      name: dpFile,
-      overwrite: true,
-    });
-    if (!dp.moved()) {
+
+    const imageUpload = await Cloudinary.uploadFile(dp);
+    // update database
+    if (imageUpload.status) {
+      student.dp = imageUpload.data;
+      await student.save();
       return response.status(200).send({
         payload: {
-          type: "error",
-          message: `something went wrong while uploading image`,
+          type: "success",
+          message: `profile image uploaded `,
+          imageUpload,
         },
       });
     }
-
-    // update database
-    student.dp = dpFile;
-    await student.save();
     return response.status(200).send({
       payload: {
-        type: "success",
-        message: `profile image uploaded `,
+        type: "error",
+        message: `Something went wrong while uploading image`,
+        imageUpload,
       },
     });
   }
@@ -386,22 +376,6 @@ class StudentController {
    * @param {Response} ctx.response
    */
   async destroy({ params, request, response }) {}
-
-  async getImage({ auth, response }) {
-    const student = await auth.authenticator("student").getUser();
-
-    const exist = await Storage.get(
-      `${Helpers.tmpPath("uploads")}/${student.dp}`
-    );
-    if (exist) {
-      return response.status(200).send({
-        payload: {
-          type: "success",
-          message: `${Helpers.tmpPath("uploads")}/${student.dp}`,
-        },
-      });
-    }
-  }
 }
 
 module.exports = StudentController;
