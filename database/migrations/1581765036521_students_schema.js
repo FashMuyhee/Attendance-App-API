@@ -18,7 +18,7 @@ class StudentsSchema extends Schema {
         .unique();
       table.string("department", 20).notNullable();
       table.string("level", 15).notNullable();
-      table.string("dp", 100);    
+      table.string("dp", 200);    
       table.timestamps();
     });
   }
