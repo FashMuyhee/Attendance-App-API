@@ -1,7 +1,5 @@
 "use strict";
 const Attendance = use("App/Models/Attendance");
-const Student = use("App/Models/Student");
-const User = use("App/Models/User");
 const { validate } = use("Validator");
 const randomstring = require("randomstring");
 const {
@@ -39,12 +37,15 @@ class AttendaceController {
           course_id: "required",
         };
 
-        const validation = await validate(data, rules);
+        console.log("b4");
+        const validation = await validate({ location, course_id }, rules);
+
         if (validation.fails()) {
-          return response.status(400).send({
-            payload: { type: "error", error: validation.messages() },
-          });
+          return response
+            .status(400)
+            .send({ payload: { type: "error", error: validation.messages() } });
         }
+        console.log("after");
         const attendance = JSON.stringify(new Array());
         let mycourse;
         // check if the lecturer his assigned to the take the course
