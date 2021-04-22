@@ -34,6 +34,17 @@ class AttendaceController {
           charset: "hex",
           capitalization: "uppercase",
         });
+        const rules = {
+          location: "required",
+          course_id: "required",
+        };
+
+        const validation = await validate(data, rules);
+        if (validation.fails()) {
+          return response.status(400).send({
+            payload: { type: "error", error: validation.messages() },
+          });
+        }
         const attendance = JSON.stringify(new Array());
         let mycourse;
         // check if the lecturer his assigned to the take the course
@@ -45,19 +56,6 @@ class AttendaceController {
         } catch (error) {
           return error;
         }
-
-        /*  const rules = {
-                          code:'required',
-                          lecturer_id: lecturer.id,
-                          course_id: "required"
-                        };
-
-                        const validation = await validate(data, rules);
-                        if (validation.fails()) {
-                          return response
-                            .status(400)
-                            .send({ payload: { type: "error", error: validation.messages() } });
-                        } */
 
         // save created attendace
         if (Array.isArray(mycourse.toJSON()) && mycourse.toJSON().length) {
