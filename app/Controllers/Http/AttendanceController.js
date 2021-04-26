@@ -27,7 +27,7 @@ class AttendaceController {
 
         const lecturer = await auth.authenticator("lecturer").getUser();
         const { course_id, location } = request.all();
-        const attd_code = randomstring.generate({
+        const att_code = randomstring.generate({
           length: 7,
           charset: "hex",
           capitalization: "uppercase",
@@ -37,7 +37,6 @@ class AttendaceController {
           course_id: "required",
         };
 
-        console.log("b4");
         const validation = await validate({ location, course_id }, rules);
 
         if (validation.fails()) {
@@ -45,36 +44,41 @@ class AttendaceController {
             .status(400)
             .send({ payload: { type: "error", error: validation.messages() } });
         }
-        console.log("after");
         const attendance = JSON.stringify(new Array());
-        let mycourse;
+        let myCourse;
         // check if the lecturer his assigned to the take the course
         try {
-          mycourse = await lecturer
+          myCourse = await lecturer
             .courses()
             .where("course_id", course_id)
             .fetch();
         } catch (error) {
           return error;
         }
-
         // save created attendace
-        if (Array.isArray(mycourse.toJSON()) && mycourse.toJSON().length) {
-          // const attd_code = `${mycourse.toJSON()[0].code}_${code}`
+        if (Array.isArray(myCourse.toJSON()) && myCourse.toJSON().length) {
           const data = {
-            code: attd_code,
+            code: att_code,
             course_id,
-            location,
+            location:JSON.stringify(location),
             attendance: attendance,
           };
+          try {
+            
+            const check = await lecturer.myAttendances().create(data);
+            console.log(check);
+          } catch (error) {
+            console.log(error);
 
-          await lecturer.myAttendances().create(data);
+            return error;
+          }
+          // await lecturer.myAttendances().create(data);
           return response.status(200).send({
             payload: {
               type: "success",
               message: {
                 msg: "attendance created",
-                attendance_code: attd_code,
+                attendance_code: att_code,
               },
             },
           });
