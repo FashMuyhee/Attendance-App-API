@@ -121,7 +121,7 @@ class AttendaceController {
         types: ["image"],
         size: "5mb",
       });
-      const saveDp = `tmp/uploads/${student.dp}`;
+      const saveDp = student.dp
 
       let query = await Attendance.findBy("code", code);
 
@@ -287,7 +287,7 @@ class AttendaceController {
         types: ["image"],
         size: "5mb",
       });
-      const saveDp = `tmp/uploads/${student.dp}`;
+      const saveDp =student.dp;
       let query = await Attendance.findBy("signout_code", signout_code);
 
       // check if attendance code exist i.e returned empty object
