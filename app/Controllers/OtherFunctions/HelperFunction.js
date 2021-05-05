@@ -25,7 +25,7 @@ const objIsEmpty = (obj) => {
  */
 const compareImageDp = async (cameraDp, saveDp) => {
   form.append("img_1", fs.createReadStream(cameraDp));
-  form.append("img_2", fs.createReadStream(saveDp));
+  form.append("img_2", saveDp);
 
   try {
     let res = await axios({
