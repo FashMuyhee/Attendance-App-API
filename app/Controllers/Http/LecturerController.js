@@ -282,7 +282,7 @@ class LecturerController {
     const lecturer = await auth.authenticator("lecturer").getUser();
 
     const attendance = await lecturer.myAttendances().fetch();
-    return response.status(200).send({ payload: { data: { attendance } } });
+    return response.status(200).send({ payload: attendance });
   }
   /**
    * Get a lecturer  attendance by course
@@ -302,7 +302,7 @@ class LecturerController {
     attendnace_table.toJSON().forEach((index) => {
       att_by_course.push(index.attendance);
     });
-    return response.status(200).send({ payload: { data: { att_by_course } } });
+    return response.status(200).send({ payload: att_by_course });
   }
 }
 
