@@ -300,7 +300,10 @@ class LecturerController {
     const attendnace_table = await course.attendances().fetch();
     const att_by_course = [];
     attendnace_table.toJSON().forEach((index) => {
-      att_by_course.push(index.attendance);
+      att_by_course.push({
+        attendance: index.attendance,
+        date: index.created_at,
+      });
     });
     return response.status(200).send({ payload: att_by_course });
   }
