@@ -203,7 +203,8 @@ class StudentController {
     query.toJSON().forEach((element) => {
       totalAttendance++;
       const parsedData = JSON.parse(element.attendance);
-      attendance.push(parsedData);
+      const date = element.created_at;
+      attendance.push({ ...parsedData, date });
     });
 
     let myAttendanceCount = 0;
