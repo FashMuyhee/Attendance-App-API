@@ -204,20 +204,19 @@ class StudentController {
       totalAttendance++;
       const parsedData = JSON.parse(element.attendance);
       const date = element.created_at;
-      attendance.push({ ...parsedData, date });
+      attendance.push([...parsedData, date]);
     });
-
     let myAttendanceCount = 0;
     for (let index = 0; index < attendance.length; index++) {
       const element = attendance[index];
-
       element.forEach((index) => {
         if (
           user.id === index.student_id &&
           index.signed_out &&
           index.signed_in
         ) {
-          myAttendance.push(index);
+          const attendanceDate = element[element.length - 1];
+          myAttendance.push({ ...index, date: attendanceDate });
           myAttendanceCount++;
         }
       });
@@ -250,7 +249,6 @@ class StudentController {
       attendance.push(parsedData);
     });
     let myAttendanceCount = 0;
-    console.log(attendance);
     for (let index = 0; index < attendance.length; index++) {
       const element = attendance[index];
 
