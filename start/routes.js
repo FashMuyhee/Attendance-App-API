@@ -53,9 +53,13 @@ Route.group(() => {
     "AttendanceController.getAttendanceLocation"
   ).as("attendances.getAttendanceLocation");
   Route.get(
-    "students/:id/get_attendance",
-    "StudentController.getAttendance"
-  ).as("students.getAttendance");
+    "students/:id/get_detailed_attendance",
+    "StudentController.getDetailedAttendance"
+  ).as("students.getDetailedAttendance");
+  Route.get(
+    "students/:id/get_summarized_attendance",
+    "StudentController.getSummarizedAttendance"
+  ).as("students.getSummarizedAttendance");
   Route.get("students/:id/get_image", "StudentController.getImage");
 }).middleware(["auth:student"]);
 

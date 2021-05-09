@@ -2,6 +2,7 @@
 
 const Student = use("App/Models/Student");
 const Attendance = use("App/Models/Attendance");
+const Course = use("App/Models/Course");
 const Cloudinary = use("App/Services/Cloudinary");
 const { validate } = use("Validator");
 
@@ -234,39 +235,83 @@ class StudentController {
    * @param {Response} ctx.response
    * @param {} ctx.auth
    */
-  async getAttendance({ auth, response }) {
+  async getDetailedAttendance({ auth, response }) {
     const user = await auth.authenticator("student").getUser();
 
     const query = await Attendance.query().fetch();
-    let attendance = [];
-    let totalAttendance = 0;
     let myAttendance = [];
 
-    query.toJSON().forEach((element) => {
-      totalAttendance++;
-      let parsedData = JSON.parse(element.attendance);
-      parsedData.course_id = element.course_id;
-      attendance.push(parsedData);
-    });
-    let myAttendanceCount = 0;
-    for (let index = 0; index < attendance.length; index++) {
-      const element = attendance[index];
+    const attendance = await Promise.all(
+      query.toJSON().map(async (element) => {
+        const course = await Course.find(element.course_id);
+        const { title, code } = course.toJSON();
+        let parsedData = JSON.parse(element.attendance);
+        const date = element.created_at;
+        return {
+          course: { title, code },
+          date,
+          attendance: parsedData,
+        };
+      })
+    );
 
-      element.forEach((index) => {
+    for (let index = 0; index < attendance.length; index++) {
+      const attendanceElement = attendance[index].attendance;
+      attendanceElement.forEach((value) => {
         if (
-          user.id === index.student_id &&
-          index.signed_out &&
-          index.signed_in
+          user.id === value.student_id &&
+          value.signed_out &&
+          value.signed_in
         ) {
-          myAttendance.push(index);
-          myAttendanceCount++;
+          myAttendance.push(attendance[index]);
         }
       });
     }
     return response.status(200).send({
-      payload: { myAttendance },
+      payload: myAttendance,
     });
   }
+  
+  // /**
+  //  * Get student summarized attendance
+  //  * GET students/:id/get_summarized_attendance
+  //  *
+  //  * @param {object} ctx
+  //  * @param {Response} ctx.response
+  //  * @param {} ctx.auth
+  //  */
+  // async getSummarizedAttendance({ auth, response }) {
+  //   const user = await auth.authenticator("student").getUser();
+
+  //   const query = await Attendance.query().fetch();
+  //   let myAttendance = [];
+  //   let courses = []
+  //   const attendance = await Promise.all(
+  //     query.toJSON().map(async (element) => {
+  //       const course = await Course.find(element.course_id);
+  //       const { title, code } = course.toJSON();
+  //       courses.push({ title, code })
+  //       let parsedData = JSON.parse(element.attendance);
+  //       const date = element.created_at;
+  //       return {
+  //         course: { title, code },
+  //         date,
+  //         attendance: parsedData,
+  //       };
+  //     })
+  //   );
+  //     console.log(courses)
+
+  //  for (let index = 0; index < attendance.length; index++) {
+  //     const { code } = attendance[index].course;
+  //     let totalCount = 0;
+  //     if(a)
+
+  //   }
+  //   return response.status(200).send({
+  //     payload: myAttendance,
+  //   });
+  // }
 
   /**
    * Update student details.

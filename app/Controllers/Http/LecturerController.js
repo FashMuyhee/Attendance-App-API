@@ -297,9 +297,9 @@ class LecturerController {
     const { course_id } = request.only(["course_id"]);
 
     const course = await Course.find(course_id);
-    const attendnace_table = await course.attendances().fetch();
+    const attendanceTable = await course.attendances().fetch();
     const att_by_course = [];
-    attendnace_table.toJSON().forEach((index) => {
+    attendanceTable.toJSON().forEach((index) => {
       att_by_course.push({
         attendance: index.attendance,
         date: index.created_at,
