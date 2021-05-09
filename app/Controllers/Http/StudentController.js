@@ -257,13 +257,14 @@ class StudentController {
 
     for (let index = 0; index < attendance.length; index++) {
       const attendanceElement = attendance[index].attendance;
+      const { date, course } = attendance[index];
       attendanceElement.forEach((value) => {
         if (
           user.id === value.student_id &&
           value.signed_out &&
           value.signed_in
         ) {
-          myAttendance.push(attendance[index]);
+          myAttendance.push({ date, course, ...value });
         }
       });
     }
@@ -271,7 +272,7 @@ class StudentController {
       payload: myAttendance,
     });
   }
-  
+
   // /**
   //  * Get student summarized attendance
   //  * GET students/:id/get_summarized_attendance
