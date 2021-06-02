@@ -12,6 +12,7 @@ const uploadFile = async (file) => {
     try {
       let response = await cloudinary.v2.uploader.upload(file.tmpPath, {
         folder: "profile_upload",
+        transformation: { quality: 50 },
       });
       resolve({ status: true, data: response.secure_url });
     } catch (error) {

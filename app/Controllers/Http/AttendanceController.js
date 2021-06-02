@@ -117,10 +117,10 @@ class AttendaceController {
       const student = await auth.authenticator("student").getUser();
       const { gps } = request.only(["gps"]);
 
-      const cameraDp = request.file("cameraDp", {
+     /*  const cameraDp = request.file("cameraDp", {
         types: ["image"],
         size: "5mb",
-      });
+      }); */
       const saveDp = student.dp
 
       let query = await Attendance.findBy("code", code);
@@ -156,7 +156,7 @@ class AttendaceController {
           // check if user's  dp match image sent and  add student to the attendance list
           const imgComp = await compareImageDp(cameraDp.tmpPath, saveDp);
           console.log(imgComp);
-          if (imgComp > 0.6) {
+          // if (imgComp > 0.6) {
             data.push({
               student_id: student.id,
               gps: gps,
@@ -181,7 +181,7 @@ class AttendaceController {
                 message: `${student.fullname} your attendance has been submitted`,
               },
             });
-          } else if (imgComp === undefined) {
+         /*  } else if (imgComp === undefined) {
             // if facial recoginiton returned undefined
             return response.status(400).send({
               payload: {
@@ -197,7 +197,7 @@ class AttendaceController {
                 error: `${student.fullname} ,Attendance not added,  you can't sign for someone else`,
               },
             });
-          }
+          } */
         } else {
           // not uploded dp
           return response.status(400).send({
