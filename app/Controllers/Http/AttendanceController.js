@@ -154,8 +154,8 @@ class AttendaceController {
         // check if student has uploaded dp already
         if (student.dp != null) {
           // check if user's  dp match image sent and  add student to the attendance list
-          const imgComp = await compareImageDp(cameraDp.tmpPath, saveDp);
-          console.log(imgComp);
+          // const imgComp = await compareImageDp(cameraDp.tmpPath, saveDp);
+          // console.log(imgComp);
           // if (imgComp > 0.6) {
             data.push({
               student_id: student.id,
