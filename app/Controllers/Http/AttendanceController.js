@@ -2,10 +2,7 @@
 const Attendance = use("App/Models/Attendance");
 const { validate } = use("Validator");
 const randomstring = require("randomstring");
-const {
-  objIsEmpty,
-  compareImageDp,
-} = require("../OtherFunctions/HelperFunction");
+const { objIsEmpty } = require("../OtherFunctions/HelperFunction");
 
 /** @typedef {import('@adonisjs/framework/src/Request')} Request */
 /** @typedef {import('@adonisjs/framework/src/Response')} Response */
@@ -60,11 +57,10 @@ class AttendaceController {
           const data = {
             code: att_code,
             course_id,
-            location:JSON.stringify(location),
+            location: JSON.stringify(location),
             attendance: attendance,
           };
           try {
-            
             const check = await lecturer.myAttendances().create(data);
             console.log(check);
           } catch (error) {
@@ -117,11 +113,7 @@ class AttendaceController {
       const student = await auth.authenticator("student").getUser();
       const { gps } = request.only(["gps"]);
 
-     /*  const cameraDp = request.file("cameraDp", {
-        types: ["image"],
-        size: "5mb",
-      }); */
-      const saveDp = student.dp
+      const saveDp = student.dp;
 
       let query = await Attendance.findBy("code", code);
 
@@ -153,51 +145,23 @@ class AttendaceController {
         }
         // check if student has uploaded dp already
         if (student.dp != null) {
-          // check if user's  dp match image sent and  add student to the attendance list
-          // const imgComp = await compareImageDp(cameraDp.tmpPath, saveDp);
-          // console.log(imgComp);
-          // if (imgComp > 0.6) {
-            data.push({
-              student_id: student.id,
-              gps: gps,
-              signed_in: true,
-              signed_in_time: new Date().toLocaleTimeString(),
-              signed_out: false,
-              signed_out_time: null,
-            });
-            query.attendance = JSON.stringify(data);
+          data.push({
+            student_id: student.id,
+            gps: gps,
+            signed_in: true,
+            signed_in_time: new Date().toLocaleTimeString(),
+            signed_out: false,
+            signed_out_time: null,
+          });
+          query.attendance = JSON.stringify(data);
 
-            /*  const validation = await validate(data, rules);
-                                    if (validation.fails()) {
-                                      return response.status(400).send({
-                                        payload: { type: "error", error: validation.messages() },
-                                      });
-                                    } */
-
-            await query.save();
-            return response.status(200).send({
-              payload: {
-                type: "success",
-                message: `${student.fullname} your attendance has been submitted`,
-              },
-            });
-         /*  } else if (imgComp === undefined) {
-            // if facial recoginiton returned undefined
-            return response.status(400).send({
-              payload: {
-                type: "error",
-                error: `Something went wrong while matching your captured face with your profile picture please try again to continue`,
-              },
-            });
-          } else {
-            return response.status(400).send({
-              // if facial recognition retuned false
-              payload: {
-                type: "error",
-                error: `${student.fullname} ,Attendance not added,  you can't sign for someone else`,
-              },
-            });
-          } */
+          await query.save();
+          return response.status(200).send({
+            payload: {
+              type: "success",
+              message: `${student.fullname} your attendance has been submitted`,
+            },
+          });
         } else {
           // not uploded dp
           return response.status(400).send({
@@ -270,8 +234,7 @@ class AttendaceController {
     }
   }
   /**
-   * Update attendance details.
-   * PUT or PATCH attendances/signout
+   * Student attendance Signout function
    *
    * @param {object} ctx
    * @param {Request} ctx.request
@@ -283,11 +246,6 @@ class AttendaceController {
 
       const student = await auth.authenticator("student").getUser();
       const { signout_code } = request.all();
-      const cameraDp = request.file("cameraDp", {
-        types: ["image"],
-        size: "5mb",
-      });
-      const saveDp =student.dp;
       let query = await Attendance.findBy("signout_code", signout_code);
 
       // check if attendance code exist i.e returned empty object
@@ -312,41 +270,21 @@ class AttendaceController {
             index.student_id === student.id &&
             !index.signed_out
           ) {
-            // facial recognition/compare
-            const imgComp = await compareImageDp(cameraDp.tmpPath, saveDp);
-            if (imgComp > 0.6) {
-              data = index;
-              // check if student data is in attendace array
-              const element = attendance.indexOf(data);
-              if (~element) {
-                data.signed_out = true;
-                data.signed_out_time = new Date().toLocaleTimeString();
-                attendance[element] = data;
-              }
-              query.attendance = JSON.stringify(attendance);
-
-              await query.save();
-              message = {
-                type: "sucess",
-                message: `${student.fullname} sign out sucessfull`,
-              };
-            } else if (imgComp === undefined) {
-              // if facial recognition returned undefined
-              return response.status(200).send({
-                payload: {
-                  type: "error",
-                  error: `Something went wrong while matching your captured face with your profile picture please try again to continue`,
-                },
-              });
-            } else {
-              // if facial recogintion returned false for similarities
-              return response.status(200).send({
-                payload: {
-                  type: "error",
-                  error: `${student.fullname} , you can't signout for someelse`,
-                },
-              });
+            data = index;
+            // check if student data is in attendace array
+            const element = attendance.indexOf(data);
+            if (~element) {
+              data.signed_out = true;
+              data.signed_out_time = new Date().toLocaleTimeString();
+              attendance[element] = data;
             }
+            query.attendance = JSON.stringify(attendance);
+
+            await query.save();
+            message = {
+              type: "success",
+              message: `${student.fullname} sign out Successful`,
+            };
           }
           //if student has signed out before
           else if (
@@ -365,7 +303,7 @@ class AttendaceController {
           ) {
             message = {
               type: "error",
-              error: `${student.fullname} You've need to mark attendance before you can sign out`,
+              error: `${student.fullname} You need to mark attendance before you can sign out`,
             };
           }
         }
