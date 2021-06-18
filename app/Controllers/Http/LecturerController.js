@@ -1,6 +1,7 @@
 "use strict";
 
 const Lecturer = use("App/Models/Lecturer");
+const Student = use("App/Models/Student");
 const Course = use("App/Models/Course");
 const Cloudinary = use("App/Services/Cloudinary");
 const { validate } = use("Validator");
@@ -52,14 +53,8 @@ class LecturerController {
   async store({ auth, request, response }) {
     try {
       // const user = await auth.authenticator("lecturer").getUser();
-      const {
-        fullname,
-        staff_no,
-        department,
-        level,
-        password,
-        email,
-      } = request.all();
+      const { fullname, staff_no, department, level, password, email } =
+        request.all();
       const data = {
         fullname,
         staff_no,
@@ -284,6 +279,7 @@ class LecturerController {
     const attendance = await lecturer.myAttendances().fetch();
     return response.status(200).send({ payload: attendance });
   }
+
   /**
    * Get a lecturer  attendance by course
    * GET lecturers/:id/attendance_by_course/
@@ -298,13 +294,30 @@ class LecturerController {
 
     const course = await Course.find(course_id);
     const attendanceTable = await course.attendances().fetch();
-    const att_by_course = [];
-    attendanceTable.toJSON().forEach((index) => {
-      att_by_course.push({
-        attendance: index.attendance,
-        date: index.created_at,
-      });
-    });
+    // const att_by_course = [];
+
+    const att_by_course = await Promise.all(
+      attendanceTable.toJSON().map(async (element) => {
+        const parsedAttendance = JSON.parse(element.attendance);
+
+        const schema = await Promise.all(
+          parsedAttendance.map(async (item) => {
+            const studentInfo = await Student.find(item.student_id);
+
+            return {
+              ...item,
+              student: {
+                matric_no: studentInfo.matric_no,
+                fullname: studentInfo.fullname,
+                id: studentInfo.id,
+                dp: studentInfo.dp,
+              },
+            };
+          })
+        );
+        return { attendance: schema, date: element.created_at };
+      })
+    );
     return response.status(200).send({ payload: att_by_course });
   }
 }
