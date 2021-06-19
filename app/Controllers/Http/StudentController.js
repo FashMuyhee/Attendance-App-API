@@ -331,10 +331,9 @@ class StudentController {
       });
 
       attendanceSummary.push({
-        [course]: {
-          totalClassHeld: totalCount,
-          aggregate: `${(100 * studentCount) / totalCount}%`,
-        },
+        course,
+        totalClassHeld: totalCount,
+        aggregate: `${(100 * studentCount) / totalCount}%`,
       });
     });
 
