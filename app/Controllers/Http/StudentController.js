@@ -53,14 +53,8 @@ class StudentController {
    */
   async store({ request, response }) {
     try {
-      const {
-        fullname,
-        matric_no,
-        department,
-        level,
-        email,
-        password,
-      } = request.all();
+      const { fullname, matric_no, department, level, email, password } =
+        request.all();
       const data = {
         fullname,
         matric_no,
@@ -273,46 +267,81 @@ class StudentController {
     });
   }
 
-  // /**
-  //  * Get student summarized attendance
-  //  * GET students/:id/get_summarized_attendance
-  //  *
-  //  * @param {object} ctx
-  //  * @param {Response} ctx.response
-  //  * @param {} ctx.auth
-  //  */
-  // async getSummarizedAttendance({ auth, response }) {
-  //   const user = await auth.authenticator("student").getUser();
+  /**
+   * Get student summarized attendance
+   * GET students/:id/get_summarized_attendance
+   *
+   * @param {object} ctx
+   * @param {Response} ctx.response
+   * @param {} ctx.auth
+   */
 
-  //   const query = await Attendance.query().fetch();
-  //   let myAttendance = [];
-  //   let courses = []
-  //   const attendance = await Promise.all(
-  //     query.toJSON().map(async (element) => {
-  //       const course = await Course.find(element.course_id);
-  //       const { title, code } = course.toJSON();
-  //       courses.push({ title, code })
-  //       let parsedData = JSON.parse(element.attendance);
-  //       const date = element.created_at;
-  //       return {
-  //         course: { title, code },
-  //         date,
-  //         attendance: parsedData,
-  //       };
-  //     })
-  //   );
-  //     console.log(courses)
+  async getSummarizedAttendance({ auth, response }) {
+    // get all student attendance
+    const user = await auth.authenticator("student").getUser();
 
-  //  for (let index = 0; index < attendance.length; index++) {
-  //     const { code } = attendance[index].course;
-  //     let totalCount = 0;
-  //     if(a)
+    const query = await Attendance.query().fetch();
 
-  //   }
-  //   return response.status(200).send({
-  //     payload: myAttendance,
-  //   });
-  // }
+    const attendance = await Promise.all(
+      query.toJSON().map(async (element) => {
+        const course = await Course.find(element.course_id);
+        const { title, code } = course.toJSON();
+        let parsedData = JSON.parse(element.attendance);
+        const date = element.created_at;
+        return {
+          course: { title, code },
+          date,
+          attendance: parsedData,
+        };
+      })
+    );
+
+    // save all students course
+    const courses = [];
+
+    for (let index = 0; index < attendance.length; index++) {
+      const item = attendance[index].course.code;
+      const courseIsExist = courses.find((index) => index === item);
+      if (courseIsExist) {
+        continue;
+      }
+      courses.push(item);
+    }
+
+    // save attendance by course
+    const attendanceSummary = [];
+    courses.forEach((course) => {
+      // filter each course attendance
+      const courseAttendance = attendance.filter(
+        (x) => x.course.code === course
+      );
+      // save attendance count per course
+      const totalCount = courseAttendance.length;
+      // get the attendance column
+      const allAttendance = courseAttendance.map((e) => e.attendance);
+
+      // filter attendance by student id
+      let studentCount = 0;
+      allAttendance.forEach((el) => {
+        const filterByStudent = el.filter(
+          (x) => x.student_id === user.id && x.signed_in && x.signed_out
+        );
+        // save student attendance count
+        if (filterByStudent.length) studentCount++;
+      });
+
+      attendanceSummary.push({
+        [course]: {
+          totalClassHeld: totalCount,
+          aggregate: `${(100 * studentCount) / totalCount}%`,
+        },
+      });
+    });
+
+    return response.status(200).send({
+      payload: attendanceSummary,
+    });
+  }
 
   /**
    * Update student details.
@@ -365,6 +394,7 @@ class StudentController {
       });
     }
   }
+
   /**
    * Update student details.
    * PUT or PATCH students/:id
@@ -412,6 +442,7 @@ class StudentController {
       },
     });
   }
+
   /**
    * Delete a student with id.
    * DELETE students/:id
