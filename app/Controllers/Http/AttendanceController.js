@@ -150,8 +150,10 @@ class AttendaceController {
             gps: gps,
             signed_in: true,
             signed_in_time: new Date().toLocaleTimeString(),
+            signin_location: gps,
             signed_out: false,
             signed_out_time: null,
+            signout_location: null,
           });
           query.attendance = JSON.stringify(data);
 
@@ -245,7 +247,7 @@ class AttendaceController {
       await auth.check();
 
       const student = await auth.authenticator("student").getUser();
-      const { signout_code } = request.all();
+      const { signout_code, gps } = request.all();
       let query = await Attendance.findBy("signout_code", signout_code);
 
       // check if attendance code exist i.e returned empty object
@@ -276,6 +278,7 @@ class AttendaceController {
             if (~element) {
               data.signed_out = true;
               data.signed_out_time = new Date().toLocaleTimeString();
+              data.signout_location = gps;
               attendance[element] = data;
             }
             query.attendance = JSON.stringify(attendance);
