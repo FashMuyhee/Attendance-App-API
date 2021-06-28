@@ -298,8 +298,8 @@ class StudentController {
 
     // get all students course
     const courses = await user.courses().fetch();
-
-   /*  for (let index = 0; index < attendance.length; index++) {
+    console.log(courses.toJSON());
+    /*  for (let index = 0; index < attendance.length; index++) {
       const item = attendance[index].course.code;
       const courseIsExist = courses.find((index) => index === item);
       if (courseIsExist) {
