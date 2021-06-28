@@ -315,10 +315,7 @@ class StudentController {
         (x) => x.course.code === course.code
       );
       // save attendance count per course
-      const totalCount = courseAttendance?.length
-        ? courseAttendance?.length
-        : 0;
-
+      const totalCount = courseAttendance.length ?? 0;
       // get the attendance column
       const allAttendance = courseAttendance.map((e) => e.attendance);
 
