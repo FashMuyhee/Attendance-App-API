@@ -296,24 +296,24 @@ class StudentController {
       })
     );
 
-    // save all students course
-    const courses = [];
+    // get all students course
+    const courses = await user.courses().fetch();
 
-    for (let index = 0; index < attendance.length; index++) {
+   /*  for (let index = 0; index < attendance.length; index++) {
       const item = attendance[index].course.code;
       const courseIsExist = courses.find((index) => index === item);
       if (courseIsExist) {
         continue;
       }
       courses.push(item);
-    }
+    } */
 
     // save attendance by course
     const attendanceSummary = [];
-    courses.forEach((course) => {
+    courses.toJSON().forEach((course) => {
       // filter each course attendance
       const courseAttendance = attendance.filter(
-        (x) => x.course.code === course
+        (x) => x.course.code === course.code
       );
       // save attendance count per course
       const totalCount = courseAttendance.length;
