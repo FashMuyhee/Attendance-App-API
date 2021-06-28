@@ -298,7 +298,6 @@ class StudentController {
 
     // get all students course
     const courses = await user.courses().fetch();
-    console.log(courses.toJSON());
     /*  for (let index = 0; index < attendance.length; index++) {
       const item = attendance[index].course.code;
       const courseIsExist = courses.find((index) => index === item);
@@ -316,7 +315,10 @@ class StudentController {
         (x) => x.course.code === course.code
       );
       // save attendance count per course
-      const totalCount = courseAttendance.length;
+      const totalCount = courseAttendance?.length
+        ? courseAttendance?.length
+        : 0;
+
       // get the attendance column
       const allAttendance = courseAttendance.map((e) => e.attendance);
 
