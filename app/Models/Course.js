@@ -10,7 +10,7 @@ class Course extends Model {
       .withTimestamps();
   }
   students() {
-    return this.belongsToMany("App/Models/Stuudent")
+    return this.belongsToMany("App/Models/Student")
       .pivotTable("student_courses")
       .withTimestamps();
   }
