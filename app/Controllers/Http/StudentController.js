@@ -125,7 +125,6 @@ class StudentController {
             .send({ payload: { type: "error", error: validation.messages() } });
         }
 
-        // await loginId.courses().attach(course_id);
         await user.courses().attach(course_id);
 
         return response.status(200).send({
@@ -298,7 +297,7 @@ class StudentController {
 
     // get all students course
     const courses = await user.courses().fetch();
-   
+
     // save attendance by course
     const attendanceSummary = [];
     courses.toJSON().forEach((course) => {
