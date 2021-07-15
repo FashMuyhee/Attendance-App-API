@@ -113,3 +113,8 @@ Route.post("students/login", "StudentController.login").as("students.login");
 Route.post("lecturers/login", "LecturerController.login").as("lecturers.login");
 Route.post("students/", "StudentController.store").as("students.store");
 Route.post("lecturers/", "LecturerController.store").as("lecturers.store");
+
+// reset-password
+Route.put("reset-password/", "ForgotPasswordController.reset");
+Route.get("verify-token/", "ForgotPasswordController.verifyToken");
+Route.post("send-reset-token/", "ForgotPasswordController.sendResetTokenEmail");

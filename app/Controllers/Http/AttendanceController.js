@@ -1,7 +1,7 @@
 "use strict";
 const Attendance = use("App/Models/Attendance");
 const { validate } = use("Validator");
-const randomstring = require("randomstring");
+const randomString = require("randomstring");
 const {
   objIsEmpty,
   isCourseRegistered,
@@ -28,7 +28,7 @@ class AttendaceController {
 
         const lecturer = await auth.authenticator("lecturer").getUser();
         const { course_id, location } = request.all();
-        const att_code = randomstring.generate({
+        const att_code = randomString.generate({
           length: 7,
           charset: "hex",
           capitalization: "uppercase",
@@ -224,7 +224,7 @@ class AttendaceController {
       await auth.check();
 
       // const lecturer = await auth.authenticator("lecturer").getUser();
-      const signout_code = randomstring.generate({
+      const signout_code = randomString.generate({
         length: 7,
         charset: "hex",
         capitalization: "uppercase",
