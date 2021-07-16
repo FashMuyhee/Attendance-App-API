@@ -39,11 +39,12 @@ class ForgotPasswordController {
         .send({ payload: { type: "error", message: validation.messages() } });
     }
     let user;
-    if (role === "student") {
+    user = await Student.findBy("email", email);
+   /*  if (role === "student") {
       user = await Student.findBy("email", email);
     } else if (role === "lecturer") {
       user = await Lecturer.findBy("email", email);
-    }
+    } */
     try {
       if (user) {
         if (this._sendResetToken(email)) {
