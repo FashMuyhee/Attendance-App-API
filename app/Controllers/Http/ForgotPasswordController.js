@@ -1,5 +1,3 @@
-"use strict";
-
 const Hash = use("Hash");
 const Mail = require("nodemailer");
 const randomString = require("randomstring");
@@ -40,11 +38,11 @@ class ForgotPasswordController {
     }
     let user;
     user = await Student.findBy("email", email);
-   /*  if (role === "student") {
+    if (role === "student") {
       user = await Student.findBy("email", email);
     } else if (role === "lecturer") {
       user = await Lecturer.findBy("email", email);
-    } */
+    }
     try {
       if (user) {
         if (this._sendResetToken(email)) {
